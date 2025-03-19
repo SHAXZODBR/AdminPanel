@@ -23,17 +23,27 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   }, [router])
 
+  // Fix the back button navigation logic
   const handleBackClick = () => {
     // Get the current path segments
     const segments = pathname.split("/").filter(Boolean)
 
-    // If we're in a deep path (more than 2 segments), go up one level
-    if (segments.length > 2) {
+    // If we're in an edit or add page, go back to the main table page
+    if (
+      segments.length > 2 &&
+      (segments[2] === "edit" || segments[2] === "add" || segments.includes("edit") || segments.includes("add"))
+    ) {
+      const basePath = "/" + segments.slice(0, 2).join("/")
+      router.push(basePath)
+    }
+    // If we're at the second level, go to users
+    else if (segments.length === 2) {
+      router.push("/dashboard/users")
+    }
+    // Otherwise go up one level
+    else if (segments.length > 2) {
       const newPath = "/" + segments.slice(0, segments.length - 1).join("/")
       router.push(newPath)
-    } else {
-      // If we're at the second level, go to dashboard
-      router.push("/dashboard")
     }
   }
 

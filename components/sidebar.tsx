@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
 import { cn } from "@/lib/utils"
-import { Home, Users, FolderTree, Tag, FileText, Settings, LogOut } from "lucide-react"
+import { Users, FileText, Settings, LogOut, UserRound, Building2, Landmark, MapPin } from "lucide-react"
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -12,24 +12,29 @@ export function Sidebar() {
 
   const routes = [
     {
-      icon: Home,
-      label: t("home"),
-      href: "/dashboard",
-    },
-    {
       icon: Users,
-      label: t("users"),
+      label: t("administrator"),
       href: "/dashboard/users",
     },
     {
-      icon: FolderTree,
-      label: t("categories"),
-      href: "/dashboard/categories",
+      icon: UserRound,
+      label: t("managers"),
+      href: "/dashboard/managers",
     },
     {
-      icon: Tag,
-      label: t("tags"),
-      href: "/dashboard/tags",
+      icon: Building2,
+      label: t("departmentsAndSectors"),
+      href: "/dashboard/departments",
+    },
+    {
+      icon: Landmark,
+      label: t("subordinateOrganizations"),
+      href: "/dashboard/subordinate-organizations",
+    },
+    {
+      icon: MapPin,
+      label: t("regionalCouncils"),
+      href: "/dashboard/regional-councils",
     },
     {
       icon: FileText,

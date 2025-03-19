@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { useStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,23 +25,22 @@ export default function AddArticlePage() {
     poster: null as File | null,
     additionalImages: [] as File[],
     author: "",
-    parentCategory: "",
+    newsType: "",
     category: "",
     title: "",
     content: "",
     tags: [] as string[],
     publishDate: "",
-    socialShare: false,
     audio: null as File | null,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.title || !formData.category) {
+    if (!formData.title || !formData.newsType) {
       toast({
         title: "Error",
-        description: "Title and category are required",
+        description: "Title and news type are required",
         variant: "destructive",
       })
       return
@@ -54,7 +52,7 @@ export default function AddArticlePage() {
     addArticle({
       language: language as "en" | "ru" | "uz",
       title: formData.title,
-      category: formData.category,
+      category: formData.newsType,
       author: formData.author || "Admin",
       image: "/placeholder.svg?height=80&width=120",
       views: 0,
@@ -62,7 +60,7 @@ export default function AddArticlePage() {
 
     toast({
       title: "Success",
-      description: "Article has been created successfully",
+      description: "News has been created successfully",
     })
 
     setIsLoading(false)
@@ -104,38 +102,23 @@ export default function AddArticlePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("parentCategory")}</label>
-                  <Select
-                    value={formData.parentCategory}
-                    onValueChange={(value) => setFormData({ ...formData, parentCategory: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("selectParentCategory")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="life">Мелочи жизни</SelectItem>
-                      <SelectItem value="health">Здоровье</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("category")}</label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("selectCategory")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="economy">Экономика</SelectItem>
-                      <SelectItem value="politics">Политика</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t("newsType")}</label>
+                <Select
+                  value={formData.newsType}
+                  onValueChange={(value) => setFormData({ ...formData, newsType: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("selectNewsType")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Янгиликлар">Янгиликлар</SelectItem>
+                    <SelectItem value="Эълонлар">Эълонлар</SelectItem>
+                    <SelectItem value="Баннер">Баннер</SelectItem>
+                    <SelectItem value="Биз ҳақимизда">Биз ҳақимизда</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -156,17 +139,6 @@ export default function AddArticlePage() {
                   placeholder={t("content")}
                   rows={10}
                 />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="social-share"
-                  checked={formData.socialShare}
-                  onCheckedChange={(checked) => setFormData({ ...formData, socialShare: checked })}
-                />
-                <label htmlFor="social-share" className="text-sm font-medium">
-                  {t("socialShare")}
-                </label>
               </div>
 
               <div className="space-y-2">

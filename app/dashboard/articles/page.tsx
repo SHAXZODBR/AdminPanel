@@ -1,17 +1,11 @@
 "use client"
 
 import { TableCell } from "@/components/ui/table"
-
 import { TableBody } from "@/components/ui/table"
-
 import { TableHead } from "@/components/ui/table"
-
 import { TableRow } from "@/components/ui/table"
-
 import { TableHeader } from "@/components/ui/table"
-
 import { Table } from "@/components/ui/table"
-
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/components/language-provider"
@@ -29,17 +23,20 @@ export default function ArticlesPage() {
   const { articles, deleteArticle } = useStore()
   const [nameFilter, setNameFilter] = useState("")
   const [idFilter, setIdFilter] = useState("")
+  const [typeFilter, setTypeFilter] = useState("")
   const [rowsPerPage, setRowsPerPage] = useState("10")
   const [currentArticles, setCurrentArticles] = useState(articles[language] || [])
 
   useEffect(() => {
+    // Make sure we're using the latest articles data
     setCurrentArticles(articles[language] || [])
   }, [language, articles])
 
   const filteredArticles = currentArticles.filter((article) => {
     const matchesName = article.title.toLowerCase().includes(nameFilter.toLowerCase())
     const matchesId = idFilter === "" || article.id === idFilter
-    return matchesName && matchesId
+    const matchesType = typeFilter === "all" || typeFilter === "" || article.category === typeFilter
+    return matchesName && matchesId && matchesType
   })
 
   const handleApplyFilters = () => {
@@ -49,6 +46,7 @@ export default function ArticlesPage() {
   const handleClearFilters = () => {
     setNameFilter("")
     setIdFilter("")
+    setTypeFilter("")
   }
 
   return (
@@ -58,16 +56,16 @@ export default function ArticlesPage() {
 
         <div className="mb-6 rounded-md border filter-section-dark p-4">
           <h3 className="mb-4 text-lg font-medium">{t("filters")}</h3>
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label htmlFor="name" className="mb-1 block text-sm font-medium">
-                {t("name")}
+                {t("title")}
               </label>
               <Input
                 id="name"
                 value={nameFilter}
                 onChange={(e) => setNameFilter(e.target.value)}
-                placeholder={t("name")}
+                placeholder={t("title")}
                 className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
               />
             </div>
@@ -82,6 +80,23 @@ export default function ArticlesPage() {
                 placeholder="ID"
                 className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
               />
+            </div>
+            <div>
+              <label htmlFor="type" className="mb-1 block text-sm font-medium">
+                {t("newsType")}
+              </label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="bg-[#3f4b5b] border-[#374151] text-white">
+                  <SelectValue placeholder={t("selectNewsType")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Янгиликлар">Янгиликлар</SelectItem>
+                  <SelectItem value="Эълонлар">Эълонлар</SelectItem>
+                  <SelectItem value="Баннер">Баннер</SelectItem>
+                  <SelectItem value="Биз ҳақимизда">Биз ҳақимизда</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex gap-2">
@@ -114,7 +129,7 @@ export default function ArticlesPage() {
               <TableRow>
                 <TableHead className="text-white">{t("language")}</TableHead>
                 <TableHead className="text-white">{t("image")}</TableHead>
-                <TableHead className="text-white">{t("category")}</TableHead>
+                <TableHead className="text-white">{t("newsType")}</TableHead>
                 <TableHead className="text-white">{t("title")}</TableHead>
                 <TableHead className="text-white">{t("author")}</TableHead>
                 <TableHead className="text-white">{t("views")}</TableHead>

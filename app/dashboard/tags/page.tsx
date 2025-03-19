@@ -21,6 +21,7 @@ export default function TagsPage() {
   const [currentTags, setCurrentTags] = useState(tags[language] || [])
 
   useEffect(() => {
+    // Make sure we're using the latest tags data
     setCurrentTags(tags[language] || [])
   }, [language, tags])
 

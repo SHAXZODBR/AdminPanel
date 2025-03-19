@@ -60,6 +60,7 @@ export default function EditTagPage() {
     }
   }, [params.id, tags, router, toast])
 
+  // Update the handleSubmit function to ensure proper language handling
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -76,18 +77,30 @@ export default function EditTagPage() {
 
     const tagId = params.id as string
 
-    updateTag(tagId, formData.language as "en" | "ru" | "uz", {
-      name: formData.name,
-      alias: formData.alias,
-    })
+    try {
+      // Update tag in store with the specific language
+      updateTag(tagId, formData.language as "en" | "ru" | "uz", {
+        name: formData.name,
+        alias: formData.alias,
+        language: formData.language as "en" | "ru" | "uz", // Ensure language is updated
+      })
 
-    toast({
-      title: "Success",
-      description: "Tag has been updated successfully",
-    })
+      toast({
+        title: "Success",
+        description: "Tag has been updated successfully",
+      })
 
-    setIsLoading(false)
-    router.push("/dashboard/tags")
+      // Navigate back to the tags page
+      router.push("/dashboard/tags")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update tag",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
