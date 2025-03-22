@@ -115,7 +115,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Leader operations
   const addLeader = (leader: Omit<Leader, "id" | "createdAt">) => {
-    const language = leader.language
+    const language = leader.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new leader
     const newId = generateUniqueId()
@@ -180,7 +180,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((l) => l.id !== id)
 
           // Add to new language with updates
-          const updatedLeader = { ...foundLeader, ...leaderData, language: language as "en" | "ru" | "uz" }
+          const updatedLeader = { ...foundLeader, ...leaderData, language: language as "en" | "ru" | "uz" | "uz-cyrl" }
           if (!newState[language]) {
             newState[language] = []
           }
@@ -211,7 +211,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Tag operations
   const addTag = (tag: Omit<Tag, "id" | "createdAt">) => {
-    const language = tag.language
+    const language = tag.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new tag
     const newId = generateUniqueId()
@@ -274,7 +274,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((t) => t.id !== id)
 
           // Add to new language with updates
-          const updatedTag = { ...foundTag, ...tagData, language: language as "en" | "ru" | "uz" }
+          const updatedTag = { ...foundTag, ...tagData, language: language as "en" | "ru" | "uz" | "uz-cyrl" }
           if (!newState[language]) {
             newState[language] = []
           }
@@ -305,7 +305,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Category operations
   const addCategory = (category: Omit<Category, "id" | "createdAt">) => {
-    const language = category.language
+    const language = category.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new category
     const newId = generateUniqueId()
@@ -370,7 +370,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((c) => c.id !== id)
 
           // Add to new language with updates
-          const updatedCategory = { ...foundCategory, ...categoryData, language: language as "en" | "ru" | "uz" }
+          const updatedCategory = {
+            ...foundCategory,
+            ...categoryData,
+            language: language as "en" | "ru" | "uz" | "uz-cyrl",
+          }
           if (!newState[language]) {
             newState[language] = []
           }
@@ -401,7 +405,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Article operations
   const addArticle = (article: Omit<Article, "id" | "createdAt">) => {
-    const language = article.language
+    const language = article.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new article
     const newId = generateUniqueId()
@@ -466,7 +470,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((a) => a.id !== id)
 
           // Add to new language with updates
-          const updatedArticle = { ...foundArticle, ...articleData, language: language as "en" | "ru" | "uz" }
+          const updatedArticle = {
+            ...foundArticle,
+            ...articleData,
+            language: language as "en" | "ru" | "uz" | "uz-cyrl",
+          }
           if (!newState[language]) {
             newState[language] = []
           }
@@ -497,7 +505,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Department operations
   const addDepartment = (department: Omit<Department, "id" | "createdAt">) => {
-    const language = department.language
+    const language = department.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new department
     const newId = generateUniqueId()
@@ -562,7 +570,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((d) => d.id !== id)
 
           // Add to new language with updates
-          const updatedDepartment = { ...foundDepartment, ...departmentData, language: language as "en" | "ru" | "uz" }
+          const updatedDepartment = {
+            ...foundDepartment,
+            ...departmentData,
+            language: language as "en" | "ru" | "uz" | "uz-cyrl",
+          }
           if (!newState[language]) {
             newState[language] = []
           }
@@ -593,7 +605,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Subordinate Organization operations
   const addSubordinateOrganization = (org: Omit<SubordinateOrganization, "id" | "createdAt">) => {
-    const language = org.language
+    const language = org.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new organization
     const newId = generateUniqueId()
@@ -656,7 +668,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((o) => o.id !== id)
 
           // Add to new language with updates
-          const updatedOrg = { ...foundOrg, ...orgData, language: language as "en" | "ru" | "uz" }
+          const updatedOrg = { ...foundOrg, ...orgData, language: language as "en" | "ru" | "uz" | "uz-cyrl" }
           if (!newState[language]) {
             newState[language] = []
           }
@@ -687,7 +699,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Regional Council operations
   const addRegionalCouncil = (council: Omit<RegionalCouncil, "id" | "createdAt">) => {
-    const language = council.language
+    const language = council.language as "en" | "ru" | "uz" | "uz-cyrl"
 
     // Generate a unique ID for the new council
     const newId = generateUniqueId()
@@ -752,7 +764,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           newState[foundLanguage] = newState[foundLanguage].filter((c) => c.id !== id)
 
           // Add to new language with updates
-          const updatedCouncil = { ...foundCouncil, ...councilData, language: language as "en" | "ru" | "uz" }
+          const updatedCouncil = {
+            ...foundCouncil,
+            ...councilData,
+            language: language as "en" | "ru" | "uz" | "uz-cyrl",
+          }
           if (!newState[language]) {
             newState[language] = []
           }

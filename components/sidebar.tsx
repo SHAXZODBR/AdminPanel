@@ -4,17 +4,36 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
 import { cn } from "@/lib/utils"
-import { Users, FileText, Settings, LogOut, UserRound, Building2, Landmark, MapPin } from "lucide-react"
+import {
+  Users,
+  FileText,
+  Settings,
+  LogOut,
+  UserRound,
+  Building2,
+  Landmark,
+  MapPin,
+  Phone,
+  Share2,
+  Map,
+  Youtube,
+} from "lucide-react"
 
 export function Sidebar() {
   const pathname = usePathname()
   const { t } = useLanguage()
 
+  // Reorder the sidebar menu to put news page (articles) second after administrator
   const routes = [
     {
       icon: Users,
       label: t("administrator"),
       href: "/dashboard/users",
+    },
+    {
+      icon: FileText,
+      label: t("articles"),
+      href: "/dashboard/articles",
     },
     {
       icon: UserRound,
@@ -37,9 +56,24 @@ export function Sidebar() {
       href: "/dashboard/regional-councils",
     },
     {
-      icon: FileText,
-      label: t("articles"),
-      href: "/dashboard/articles",
+      icon: Phone,
+      label: t("contactInfo"),
+      href: "/dashboard/contact-info",
+    },
+    {
+      icon: Share2,
+      label: t("socialMedia"),
+      href: "/dashboard/social-media",
+    },
+    {
+      icon: Youtube,
+      label: t("youtubeVideos"),
+      href: "/dashboard/youtube-videos",
+    },
+    {
+      icon: Map,
+      label: t("maps"),
+      href: "/dashboard/maps",
     },
     {
       icon: Settings,

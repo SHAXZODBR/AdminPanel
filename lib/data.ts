@@ -6,7 +6,7 @@ export type User = {
 
 export type Leader = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   fullName: string
   position: string
   phoneNumber: string
@@ -18,7 +18,7 @@ export type Leader = {
 
 export type Tag = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   name: string
   alias: string
   createdAt: string
@@ -26,7 +26,7 @@ export type Tag = {
 
 export type Category = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   name: string
   parent: string
   position: number
@@ -35,7 +35,7 @@ export type Category = {
 
 export type Article = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   title: string
   category: string
   image: string
@@ -46,7 +46,7 @@ export type Article = {
 
 export type Department = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   name: string
   type: "department" | "sector"
   head: string
@@ -58,7 +58,7 @@ export type Department = {
 // Add new types
 export type SubordinateOrganization = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   name: string
   type: "organization" | "institution"
   head: string
@@ -70,7 +70,7 @@ export type SubordinateOrganization = {
 
 export type RegionalCouncil = {
   id: string
-  language: "en" | "ru" | "uz"
+  language: "en" | "ru" | "uz" | "uz-cyrl"
   name: string
   region: string
   head: string
@@ -89,7 +89,44 @@ export const mockUsers: User[] = [
   { id: "6", login: "nafisa", createdAt: "10.02.2022 21:37" },
 ]
 
-export const mockLeaders: Leader[] = {
+// Add mock data for Uzbek Cyrillic language (uz-cyrl)
+// Add this to the existing mockLeaders object
+export const mockLeaders: Record<string, Leader[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      fullName: "Абдуллоҳ Каримов",
+      position: "Директор",
+      phoneNumber: "+998 90 123 45 67",
+      email: "abdulloh.karimov@example.com",
+      bio: "Абдуллоҳ Каримов 2020 йилдан бери директор лавозимида ишлайди. У бошқарув ва раҳбарлик соҳасида катта тажрибага эга.",
+      photo: "/placeholder.svg?height=100&width=100",
+      createdAt: "13.03.2025 11:00",
+    },
+    {
+      id: "2",
+      language: "uz-cyrl",
+      fullName: "Малика Раҳимова",
+      position: "Директор ўринбосари",
+      phoneNumber: "+998 90 987 65 43",
+      email: "malika.rahimova@example.com",
+      bio: "Малика Раҳимова кундалик операцияларни назорат қилади ва ташкилотда 10 йилдан ортиқ ишлайди.",
+      photo: "/placeholder.svg?height=100&width=100",
+      createdAt: "12.03.2025 11:14",
+    },
+    {
+      id: "3",
+      language: "uz-cyrl",
+      fullName: "Рустам Алиев",
+      position: "Молия бўлими бошлиғи",
+      phoneNumber: "+998 90 456 78 90",
+      email: "rustam.aliyev@example.com",
+      bio: "Рустам Алиев ташкилотнинг барча молиявий жиҳатларини аниқлик ва тажриба билан бошқаради.",
+      photo: "/placeholder.svg?height=100&width=100",
+      createdAt: "11.03.2025 18:09",
+    },
+  ],
   en: [
     {
       id: "1",
@@ -197,7 +234,30 @@ export const mockLeaders: Leader[] = {
   ],
 }
 
+// Add mock data for Uzbek Cyrillic language (uz-cyrl) for departments
 export const mockDepartments: Record<string, Department[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      name: "Кадрлар бўлими",
+      type: "department",
+      head: "Абдулла Қодиров",
+      phoneNumber: "+998 90 123 45 67",
+      email: "hr@example.com",
+      createdAt: "13.03.2025 11:00",
+    },
+    {
+      id: "2",
+      language: "uz-cyrl",
+      name: "ИТ қўллаб-қувватлаш",
+      type: "sector",
+      head: "Малика Раҳимова",
+      phoneNumber: "+998 90 987 65 43",
+      email: "it@example.com",
+      createdAt: "12.03.2025 11:14",
+    },
+  ],
   en: [
     {
       id: "1",
@@ -266,7 +326,21 @@ export const mockDepartments: Record<string, Department[]> = {
   ],
 }
 
-export const mockTags: Tag[] = {
+// Add mock data for Uzbek Cyrillic language (uz-cyrl) for tags
+export const mockTags: Record<string, Tag[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      name: "Фахрий легион ордени",
+      alias: "фахрий-легион-ордени",
+      createdAt: "13.03.2025 11:00",
+    },
+    { id: "2", language: "uz-cyrl", name: "Концерт", alias: "концерт", createdAt: "12.03.2025 11:14" },
+    { id: "3", language: "uz-cyrl", name: "Ижро санъати", alias: "ижро-санъати", createdAt: "12.03.2025 11:14" },
+    { id: "4", language: "uz-cyrl", name: "Фонограмма", alias: "фонограмма", createdAt: "12.03.2025 11:14" },
+    { id: "5", language: "uz-cyrl", name: "Велоспорт", alias: "велоспорт", createdAt: "11.03.2025 18:09" },
+  ],
   en: [
     {
       id: "1",
@@ -314,7 +388,50 @@ export const mockTags: Tag[] = {
   ],
 }
 
-export const mockCategories: Category[] = {
+// Add mock data for Uzbek Cyrillic language (uz-cyrl) for categories
+export const mockCategories: Record<string, Category[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      name: "Дам олиш",
+      parent: "Ҳаёт тафсилотлари",
+      position: 40,
+      createdAt: "05.07.2021 09:45",
+    },
+    {
+      id: "2",
+      language: "uz-cyrl",
+      name: "Истеъмолчи",
+      parent: "Ҳаёт тафсилотлари",
+      position: 30,
+      createdAt: "05.07.2021 09:45",
+    },
+    {
+      id: "3",
+      language: "uz-cyrl",
+      name: "Уй ҳайвонларимиз",
+      parent: "Ҳаёт тафсилотлари",
+      position: 20,
+      createdAt: "05.07.2021 09:45",
+    },
+    {
+      id: "4",
+      language: "uz-cyrl",
+      name: "Воқеалар",
+      parent: "Ҳаёт тафсилотлари",
+      position: 10,
+      createdAt: "05.07.2021 09:45",
+    },
+    {
+      id: "5",
+      language: "uz-cyrl",
+      name: "Озиқ-овқат ва ичимликлар",
+      parent: "Соғлиқ",
+      position: 40,
+      createdAt: "05.07.2021 09:44",
+    },
+  ],
   en: [
     { id: "1", language: "en", name: "Leisure", parent: "Life details", position: 40, createdAt: "05.07.2021 09:45" },
     { id: "2", language: "en", name: "Consumer", parent: "Life details", position: 30, createdAt: "05.07.2021 09:45" },
@@ -394,7 +511,60 @@ export const mockCategories: Category[] = {
   ],
 }
 
-export const mockArticles: Article[] = {
+// Add mock data for Uzbek Cyrillic language (uz-cyrl) for articles
+export const mockArticles: Record<string, Article[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      title: 'Ўзбекистонда "Жонгелди" конида уран қазиб олиш тезлаштирилади',
+      category: "Иқтисодиёт",
+      image: "/placeholder.svg?height=80&width=120",
+      author: "Нафиса Абдухаликова",
+      views: 58,
+      createdAt: "13.03.2025 19:36",
+    },
+    {
+      id: "2",
+      language: "uz-cyrl",
+      title: "Самарқанд вилоятида ёш экологлар боғи барпо этилмоқда",
+      category: "Истеъмолчи",
+      image: "/placeholder.svg?height=80&width=120",
+      author: "Нафиса Абдухаликова",
+      views: 73,
+      createdAt: "13.03.2025 16:59",
+    },
+    {
+      id: "3",
+      language: "uz-cyrl",
+      title: "Ўзбекистон Президенти Франсия Миллий Ассамблеяси раиси билан учрашди",
+      category: "Сиёсат",
+      image: "/placeholder.svg?height=80&width=120",
+      author: "Нафиса Абдухаликова",
+      views: 90,
+      createdAt: "13.03.2025 16:05",
+    },
+    {
+      id: "4",
+      language: "uz-cyrl",
+      title: "2025 йилда Ўзбекистон университетларига кириш учун мажбурий фанлар эълон қилинди",
+      category: "Истеъмолчи",
+      image: "/placeholder.svg?height=80&width=120",
+      author: "Нафиса Абдухаликова",
+      views: 87,
+      createdAt: "13.03.2025 15:48",
+    },
+    {
+      id: "5",
+      language: "uz-cyrl",
+      title: "Қирғизистон ва Тожикистон давлат чегараси бўйича келишувга эришди",
+      category: "Дунё",
+      image: "/placeholder.svg?height=80&width=120",
+      author: "Нафиса Абдухаликова",
+      views: 103,
+      createdAt: "13.03.2025 14:15",
+    },
+  ],
   en: [
     {
       id: "1",
@@ -553,8 +723,32 @@ export const mockArticles: Article[] = {
   ],
 }
 
-// Add mock data
+// Add mock data for Uzbek Cyrillic language (uz-cyrl) for subordinate organizations
 export const mockSubordinateOrganizations: Record<string, SubordinateOrganization[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      name: "Миллий тадқиқот институти",
+      type: "organization",
+      head: "Роберт Вилсон",
+      phoneNumber: "+998 90 123 45 67",
+      email: "research@example.com",
+      address: "Фан кўчаси 123, Тошкент",
+      createdAt: "13.03.2025 11:00",
+    },
+    {
+      id: "2",
+      language: "uz-cyrl",
+      name: "Марказий ўқув маркази",
+      type: "institution",
+      head: "Эмили Браун",
+      phoneNumber: "+998 90 987 65 43",
+      email: "training@example.com",
+      address: "Таълим шоҳ кўчаси 45, Тошкент",
+      createdAt: "12.03.2025 11:14",
+    },
+  ],
   en: [
     {
       id: "1",
@@ -629,7 +823,32 @@ export const mockSubordinateOrganizations: Record<string, SubordinateOrganizatio
   ],
 }
 
+// Add mock data for Uzbek Cyrillic language (uz-cyrl) for regional councils
 export const mockRegionalCouncils: Record<string, RegionalCouncil[]> = {
+  "uz-cyrl": [
+    {
+      id: "1",
+      language: "uz-cyrl",
+      name: "Тошкент вилоят кенгаши",
+      region: "Тошкент",
+      head: "Жеймс Андерсон",
+      phoneNumber: "+998 90 123 45 67",
+      email: "tashkent@example.com",
+      address: "Кенгаш кўчаси 789, Тошкент",
+      createdAt: "13.03.2025 11:00",
+    },
+    {
+      id: "2",
+      language: "uz-cyrl",
+      name: "Самарқанд вилоят кенгаши",
+      region: "Самарқанд",
+      head: "Сара Дэвис",
+      phoneNumber: "+998 90 987 65 43",
+      email: "samarkand@example.com",
+      address: "Қадимий майдон 456, Самарқанд",
+      createdAt: "12.03.2025 11:14",
+    },
+  ],
   en: [
     {
       id: "1",

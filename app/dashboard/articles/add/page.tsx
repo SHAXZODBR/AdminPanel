@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { RichTextEditor } from "@/components/rich-text-editor"
 import { useToast } from "@/hooks/use-toast"
 import { useStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,12 +50,13 @@ export default function AddArticlePage() {
 
     // Add article to store
     addArticle({
-      language: language as "en" | "ru" | "uz",
+      language: language as "en" | "ru" | "uz" | "uz-cyrl",
       title: formData.title,
       category: formData.newsType,
       author: formData.author || "Admin",
       image: "/placeholder.svg?height=80&width=120",
       views: 0,
+      content: formData.content, // Make sure to include the content
     })
 
     toast({
@@ -84,6 +85,16 @@ export default function AddArticlePage() {
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t("title")}</label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder={t("title")}
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t("poster")}</label>
                 <div className="flex items-center gap-2">
@@ -122,22 +133,11 @@ export default function AddArticlePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t("title")}</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder={t("title")}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
                 <label className="text-sm font-medium">{t("content")}</label>
-                <Textarea
+                <RichTextEditor
                   value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, content: value })}
                   placeholder={t("content")}
-                  rows={10}
                 />
               </div>
 

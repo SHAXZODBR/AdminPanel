@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { RichTextEditor } from "@/components/rich-text-editor"
 import { useToast } from "@/hooks/use-toast"
 import { useStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -43,7 +43,7 @@ export default function EditArticlePage() {
     let foundArticle = null
     let foundLanguage = ""
 
-    for (const lang of ["en", "ru", "uz"]) {
+    for (const lang of ["uz-cyrl", "ru", "uz"]) {
       const article = articles[lang]?.find((a) => a.id === articleId)
       if (article) {
         foundArticle = article
@@ -90,12 +90,12 @@ export default function EditArticlePage() {
 
     try {
       // Update article in store with the specific language
-      updateArticle(articleId, formData.language as "en" | "ru" | "uz", {
+      updateArticle(articleId, formData.language as "en" | "ru" | "uz" | "uz-cyrl", {
         title: formData.title,
         category: formData.newsType,
         author: formData.author,
         content: formData.content,
-        language: formData.language as "en" | "ru" | "uz", // Ensure language is updated
+        language: formData.language as "en" | "ru" | "uz" | "uz-cyrl", // Ensure language is updated
       })
 
       toast({
@@ -145,9 +145,19 @@ export default function EditArticlePage() {
                   <SelectContent>
                     <SelectItem value="ru">Русский язык</SelectItem>
                     <SelectItem value="uz">O'zbek tili</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="uz-cyrl">Ўзбекча (Кирилл)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t("title")}</label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder={t("title")}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
@@ -188,22 +198,11 @@ export default function EditArticlePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t("title")}</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder={t("title")}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
                 <label className="text-sm font-medium">{t("content")}</label>
-                <Textarea
+                <RichTextEditor
                   value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, content: value })}
                   placeholder={t("content")}
-                  rows={10}
                 />
               </div>
 
