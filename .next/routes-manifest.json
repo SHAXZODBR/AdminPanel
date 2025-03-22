@@ -1,0 +1,280 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "dynamicRoutes": [
+    {
+      "page": "/dashboard/articles/[id]/edit",
+      "regex": "^/dashboard/articles/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/articles/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/contact-info/[id]/edit",
+      "regex": "^/dashboard/contact\\-info/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/contact\\-info/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/departments/[id]/edit",
+      "regex": "^/dashboard/departments/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/departments/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/managers/[id]/edit",
+      "regex": "^/dashboard/managers/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/managers/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/regional-councils/[id]/edit",
+      "regex": "^/dashboard/regional\\-councils/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/regional\\-councils/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/social-media/[id]/edit",
+      "regex": "^/dashboard/social\\-media/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/social\\-media/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/subordinate-organizations/[id]/edit",
+      "regex": "^/dashboard/subordinate\\-organizations/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/subordinate\\-organizations/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/tags/[id]/edit",
+      "regex": "^/dashboard/tags/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/tags/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/users/[id]/edit",
+      "regex": "^/dashboard/users/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/users/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/dashboard/youtube-videos/[id]/edit",
+      "regex": "^/dashboard/youtube\\-videos/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/youtube\\-videos/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/articles",
+      "regex": "^/dashboard/articles(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/articles(?:/)?$"
+    },
+    {
+      "page": "/dashboard/articles/add",
+      "regex": "^/dashboard/articles/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/articles/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/contact-info",
+      "regex": "^/dashboard/contact\\-info(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/contact\\-info(?:/)?$"
+    },
+    {
+      "page": "/dashboard/contact-info/add",
+      "regex": "^/dashboard/contact\\-info/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/contact\\-info/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/departments",
+      "regex": "^/dashboard/departments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/departments(?:/)?$"
+    },
+    {
+      "page": "/dashboard/departments/add",
+      "regex": "^/dashboard/departments/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/departments/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/managers",
+      "regex": "^/dashboard/managers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/managers(?:/)?$"
+    },
+    {
+      "page": "/dashboard/managers/add",
+      "regex": "^/dashboard/managers/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/managers/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/maps",
+      "regex": "^/dashboard/maps(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/maps(?:/)?$"
+    },
+    {
+      "page": "/dashboard/regional-councils",
+      "regex": "^/dashboard/regional\\-councils(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/regional\\-councils(?:/)?$"
+    },
+    {
+      "page": "/dashboard/regional-councils/add",
+      "regex": "^/dashboard/regional\\-councils/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/regional\\-councils/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/settings",
+      "regex": "^/dashboard/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/social-media",
+      "regex": "^/dashboard/social\\-media(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/social\\-media(?:/)?$"
+    },
+    {
+      "page": "/dashboard/social-media/add",
+      "regex": "^/dashboard/social\\-media/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/social\\-media/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/subordinate-organizations",
+      "regex": "^/dashboard/subordinate\\-organizations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/subordinate\\-organizations(?:/)?$"
+    },
+    {
+      "page": "/dashboard/subordinate-organizations/add",
+      "regex": "^/dashboard/subordinate\\-organizations/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/subordinate\\-organizations/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/tags",
+      "regex": "^/dashboard/tags(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/tags(?:/)?$"
+    },
+    {
+      "page": "/dashboard/tags/add",
+      "regex": "^/dashboard/tags/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/tags/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/users",
+      "regex": "^/dashboard/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/users(?:/)?$"
+    },
+    {
+      "page": "/dashboard/users/add",
+      "regex": "^/dashboard/users/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/users/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/youtube-videos",
+      "regex": "^/dashboard/youtube\\-videos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/youtube\\-videos(?:/)?$"
+    },
+    {
+      "page": "/dashboard/youtube-videos/add",
+      "regex": "^/dashboard/youtube\\-videos/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/youtube\\-videos/add(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/register",
+      "regex": "^/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/register(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "RSC",
+    "varyHeader": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch",
+    "prefetchHeader": "Next-Router-Prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "Next-Router-Segment-Prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  },
+  "rewrites": []
+}
