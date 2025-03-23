@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef, useEffect } from "react"
 import {
   Bold,
@@ -17,10 +19,12 @@ import {
   Quote,
   Undo,
   Redo,
+  Languages,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { transliterate } from "@/lib/transliteration"
+import { useLanguage } from "@/components/language-provider"
 
 interface RichTextEditorProps {
   value: string
@@ -29,6 +33,7 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ value, onChange, placeholder = "Введите текст..." }: RichTextEditorProps) {
+  const { t, language } = useLanguage()
   const [activeTab, setActiveTab] = useState("main")
   const [translitValue, setTranslitValue] = useState("")
   const editorRef = useRef<HTMLDivElement>(null)
@@ -46,40 +51,63 @@ export function RichTextEditor({ value, onChange, placeholder = "Введите 
   // Update transliteration when value changes or tab changes
   useEffect(() => {
     if (activeTab === "translit" && translitEditorRef.current) {
-      // When switching to translit tab, convert from Cyrillic to Latin
-      const transliterated = transliterate(value, "cyrillic-to-latin")
+      let transliterated = value
+
+      // Determine which transliteration to use based on the current language
+      if (language === "uz_latn") {
+        // Convert from Latin to Cyrillic
+        transliterated = transliterate(value, "latin-to-cyrillic")
+      } else if (language === "uz_cyrl") {
+        // Convert from Cyrillic to Latin
+        transliterated = transliterate(value, "cyrillic-to-latin")
+      }
+
       setTranslitValue(transliterated)
       translitEditorRef.current.innerHTML = transliterated
     }
-  }, [value, activeTab])
+  }, [value, activeTab, language])
 
-  // Format handlers
-  const execCommand = (command: string, value = "") => {
+  // Format handlers - PREVENT DEFAULT to avoid form submission
+  const execCommand = (e: React.MouseEvent, command: string, value = "") => {
+    e.preventDefault()
+    e.stopPropagation()
+
     document.execCommand(command, false, value)
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML)
     }
   }
 
-  const formatText = (format: string) => {
-    execCommand(format)
+  const formatText = (e: React.MouseEvent, format: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    execCommand(e, format)
   }
 
-  const insertLink = () => {
+  const insertLink = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
     const url = prompt("Enter URL:", "https://")
     if (url) {
-      execCommand("createLink", url)
+      execCommand(e, "createLink", url)
     }
   }
 
-  const insertImage = () => {
+  const insertImage = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
     const url = prompt("Enter image URL:", "https://")
     if (url) {
-      execCommand("insertImage", url)
+      execCommand(e, "insertImage", url)
     }
   }
 
-  const insertTable = () => {
+  const insertTable = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
     const rows = prompt("Number of rows:", "3")
     const cols = prompt("Number of columns:", "3")
 
@@ -93,7 +121,15 @@ export function RichTextEditor({ value, onChange, placeholder = "Введите 
         table += "</tr>"
       }
       table += "</table>"
-      execCommand("insertHTML", table)
+      execCommand(e, "insertHTML", table)
+    }
+  }
+
+  const handleFormatBlock = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.preventDefault()
+    document.execCommand("formatBlock", false, e.target.value)
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML)
     }
   }
 
@@ -109,103 +145,273 @@ export function RichTextEditor({ value, onChange, placeholder = "Введите 
       const newTranslitContent = translitEditorRef.current.innerHTML
       setTranslitValue(newTranslitContent)
 
-      // Convert from Latin to Cyrillic when editing in the translit tab
-      const cyrillicContent = transliterate(newTranslitContent, "latin-to-cyrillic")
-      onChange(cyrillicContent)
+      // Convert back to the original language format
+      let originalContent = newTranslitContent
 
-      // Don't update the transliteration editor's content here to avoid cursor jumping
+      if (language === "uz_latn") {
+        // Convert from Cyrillic back to Latin
+        originalContent = transliterate(newTranslitContent, "cyrillic-to-latin")
+      } else if (language === "uz_cyrl") {
+        // Convert from Latin back to Cyrillic
+        originalContent = transliterate(newTranslitContent, "latin-to-cyrillic")
+      }
+
+      onChange(originalContent)
     }
   }
+
+  const handleTranslitButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Determine which editor is currently active
+    const activeEditor = activeTab === "main" ? editorRef.current : translitEditorRef.current
+
+    if (activeEditor) {
+      const selection = window.getSelection()
+
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        const selectedText = range.toString()
+
+        if (selectedText) {
+          // Transliterate the selected text
+          let transliteratedText = selectedText
+
+          if (language === "uz_latn") {
+            // Convert from Latin to Cyrillic
+            transliteratedText = transliterate(selectedText, "latin-to-cyrillic")
+          } else if (language === "uz_cyrl") {
+            // Convert from Cyrillic to Latin
+            transliteratedText = transliterate(selectedText, "cyrillic-to-latin")
+          }
+
+          // Replace the selected text with the transliterated text
+          range.deleteContents()
+          range.insertNode(document.createTextNode(transliteratedText))
+
+          // Update the editor content
+          if (activeTab === "main") {
+            onChange(editorRef.current?.innerHTML || "")
+          } else {
+            handleTranslitEditorInput()
+          }
+        } else {
+          // If no text is selected, transliterate the entire content
+          const currentContent = activeEditor.innerHTML
+          const textContent = activeEditor.textContent || ""
+
+          // Extract HTML tags and their positions
+          const htmlTags: { tag: string; position: number }[] = []
+          const tagRegex = /<[^>]+>/g
+          let match
+
+          while ((match = tagRegex.exec(currentContent)) !== null) {
+            htmlTags.push({
+              tag: match[0],
+              position: match.index,
+            })
+          }
+
+          // Transliterate the text content
+          let transliteratedText = textContent
+
+          if (language === "uz_latn") {
+            // Convert from Latin to Cyrillic
+            transliteratedText = transliterate(textContent, "latin-to-cyrillic")
+          } else if (language === "uz_cyrl") {
+            // Convert from Cyrillic to Latin
+            transliteratedText = transliterate(textContent, "cyrillic-to-latin")
+          }
+
+          // Reinsert HTML tags at their original positions
+          let result = transliteratedText
+          for (let i = htmlTags.length - 1; i >= 0; i--) {
+            const tag = htmlTags[i]
+            result = result.slice(0, tag.position) + tag.tag + result.slice(tag.position)
+          }
+
+          activeEditor.innerHTML = result
+
+          // Update the state based on which editor was modified
+          if (activeTab === "main") {
+            onChange(result)
+          } else {
+            setTranslitValue(result)
+            handleTranslitEditorInput()
+          }
+        }
+      }
+    }
+  }
+
+  // Only show the transliteration tab for Uzbek languages
+  const showTranslitTab = language === "uz_latn" || language === "uz_cyrl"
+
+  // Label for transliteration button based on language
+  const translitButtonLabel =
+    language === "uz_latn"
+      ? "Kirill alifbosiga o'tkazish"
+      : language === "uz_cyrl"
+        ? "Lotin alifbosiga o'tkazish"
+        : "Translit"
 
   return (
     <div className="border rounded-md">
       <Tabs defaultValue="main" onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start border-b rounded-none">
-          <TabsTrigger
-            value="main"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            ОСНОВНОЕ
-          </TabsTrigger>
-          <TabsTrigger
-            value="translit"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            ТРАНСЛИТ
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between border-b p-2">
+          <TabsList className="bg-transparent">
+            <TabsTrigger
+              value="main"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              {language === "ru" ? "ОСНОВНОЕ" : language === "uz_latn" ? "ASOSIY" : "АСОСИЙ"}
+            </TabsTrigger>
+            {showTranslitTab && (
+              <TabsTrigger
+                value="translit"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                {language === "uz_latn" ? "TRANSLIT" : "ТРАНСЛИТ"}
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {showTranslitTab && (
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleTranslitButtonClick}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2"
+            >
+              <Languages className="h-4 w-4" />
+              {translitButtonLabel}
+            </Button>
+          )}
+        </div>
 
         <div className="p-1 border-b flex flex-wrap gap-1">
           <div className="flex items-center border rounded-sm">
-            <select
-              className="h-8 px-2 text-sm focus:outline-none"
-              onChange={(e) => execCommand("formatBlock", e.target.value)}
-            >
-              <option value="p">Paragraph</option>
-              <option value="h1">Heading 1</option>
-              <option value="h2">Heading 2</option>
-              <option value="h3">Heading 3</option>
-              <option value="h4">Heading 4</option>
-              <option value="pre">Preformatted</option>
+            <select className="h-8 px-2 text-sm focus:outline-none" onChange={handleFormatBlock}>
+              <option value="p">{t("paragraph")}</option>
+              <option value="h1">{t("heading")} 1</option>
+              <option value="h2">{t("heading")} 2</option>
+              <option value="h3">{t("heading")} 3</option>
+              <option value="h4">{t("heading")} 4</option>
+              <option value="pre">{t("preformatted")}</option>
             </select>
           </div>
 
           <div className="flex items-center border rounded-sm">
-            <Button variant="ghost" size="icon" onClick={() => formatText("bold")} title="Bold">
+            <Button type="button" variant="ghost" size="icon" onClick={(e) => formatText(e, "bold")} title={t("bold")}>
               <Bold className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => formatText("italic")} title="Italic">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => formatText(e, "italic")}
+              title={t("italic")}
+            >
               <Italic className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => formatText("underline")} title="Underline">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => formatText(e, "underline")}
+              title={t("underline")}
+            >
               <Underline className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => formatText("strikeThrough")} title="Strikethrough">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => formatText(e, "strikeThrough")}
+              title={t("strikethrough")}
+            >
               <Strikethrough className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex items-center border rounded-sm">
-            <Button variant="ghost" size="icon" onClick={() => execCommand("justifyLeft")} title="Align Left">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => execCommand(e, "justifyLeft")}
+              title={t("alignLeft")}
+            >
               <AlignLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => execCommand("justifyCenter")} title="Align Center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => execCommand(e, "justifyCenter")}
+              title={t("alignCenter")}
+            >
               <AlignCenter className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => execCommand("justifyRight")} title="Align Right">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => execCommand(e, "justifyRight")}
+              title={t("alignRight")}
+            >
               <AlignRight className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex items-center border rounded-sm">
-            <Button variant="ghost" size="icon" onClick={() => execCommand("insertUnorderedList")} title="Bullet List">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => execCommand(e, "insertUnorderedList")}
+              title={t("bulletList")}
+            >
               <List className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => execCommand("insertOrderedList")} title="Numbered List">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => execCommand(e, "insertOrderedList")}
+              title={t("numberedList")}
+            >
               <ListOrdered className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex items-center border rounded-sm">
-            <Button variant="ghost" size="icon" onClick={insertLink} title="Insert Link">
+            <Button type="button" variant="ghost" size="icon" onClick={insertLink} title={t("insertLink")}>
               <Link className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => execCommand("formatBlock", "blockquote")} title="Quote">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => execCommand(e, "formatBlock", "blockquote")}
+              title={t("quote")}
+            >
               <Quote className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={insertImage} title="Insert Image">
+            <Button type="button" variant="ghost" size="icon" onClick={insertImage} title={t("insertImage")}>
               <Image className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={insertTable} title="Insert Table">
+            <Button type="button" variant="ghost" size="icon" onClick={insertTable} title={t("insertTable")}>
               <Table className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex items-center border rounded-sm">
-            <Button variant="ghost" size="icon" onClick={() => execCommand("undo")} title="Undo">
+            <Button type="button" variant="ghost" size="icon" onClick={(e) => execCommand(e, "undo")} title={t("undo")}>
               <Undo className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => execCommand("redo")} title="Redo">
+            <Button type="button" variant="ghost" size="icon" onClick={(e) => execCommand(e, "redo")} title={t("redo")}>
               <Redo className="h-4 w-4" />
             </Button>
           </div>
@@ -222,16 +428,18 @@ export function RichTextEditor({ value, onChange, placeholder = "Введите 
           />
         </TabsContent>
 
-        <TabsContent value="translit" className="mt-0">
-          <div
-            ref={translitEditorRef}
-            className="min-h-[300px] p-4 focus:outline-none"
-            contentEditable
-            onInput={handleTranslitEditorInput}
-            placeholder={placeholder}
-            suppressContentEditableWarning={true}
-          />
-        </TabsContent>
+        {showTranslitTab && (
+          <TabsContent value="translit" className="mt-0">
+            <div
+              ref={translitEditorRef}
+              className="min-h-[300px] p-4 focus:outline-none"
+              contentEditable
+              onInput={handleTranslitEditorInput}
+              placeholder={placeholder}
+              suppressContentEditableWarning={true}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

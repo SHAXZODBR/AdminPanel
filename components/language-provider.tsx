@@ -164,6 +164,8 @@ const translations = {
     youtubeUrlHelp: "YouTube видео URL манзилини киритинг",
     youtubeVideoId: "YouTube видео ID",
     youtubeVideoIdHelp: "YouTube видео ID рақамини киритинг",
+    head: "Сарлавҳа",
+    type: "Тур",
   },
   ru: {
     dashboard: "Панель управления",
@@ -316,6 +318,8 @@ const translations = {
     youtubeUrlHelp: "Введите URL адрес YouTube видео",
     youtubeVideoId: "YouTube видео ID",
     youtubeVideoIdHelp: "Введите ID номер YouTube видео",
+    head: "Заголовок",
+    type: "Тип",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -468,6 +472,8 @@ const translations = {
     youtubeUrlHelp: "YouTube video URL manzilini kiriting",
     youtubeVideoId: "YouTube video ID",
     youtubeVideoIdHelp: "YouTube video ID raqamini kiriting",
+    head: "Sarlavha",
+    type: "Tur",
   },
 }
 

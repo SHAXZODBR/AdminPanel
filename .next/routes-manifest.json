@@ -47,6 +47,14 @@
       "namedRegex": "^/dashboard/managers/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
+      "page": "/dashboard/news/[id]/edit",
+      "regex": "^/dashboard/news/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/news/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
       "page": "/dashboard/regional-councils/[id]/edit",
       "regex": "^/dashboard/regional\\-councils/([^/]+?)/edit(?:/)?$",
       "routeKeys": {
@@ -167,6 +175,24 @@
       "regex": "^/dashboard/maps(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard/maps(?:/)?$"
+    },
+    {
+      "page": "/dashboard/maps/add",
+      "regex": "^/dashboard/maps/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/maps/add(?:/)?$"
+    },
+    {
+      "page": "/dashboard/news",
+      "regex": "^/dashboard/news(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/news(?:/)?$"
+    },
+    {
+      "page": "/dashboard/news/add",
+      "regex": "^/dashboard/news/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/news/add(?:/)?$"
     },
     {
       "page": "/dashboard/regional-councils",

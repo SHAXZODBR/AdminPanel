@@ -84,7 +84,6 @@ const latinToCyrillic: Record<string, string> = {
   g: "г",
   d: "д",
   e: "е",
-  yo: "ё",
   j: "ж",
   z: "з",
   i: "и",
@@ -101,24 +100,14 @@ const latinToCyrillic: Record<string, string> = {
   u: "у",
   f: "ф",
   x: "х",
-  ts: "ц",
-  ch: "ч",
-  sh: "ш",
-  "'": "ъ",
-  e: "э",
-  yu: "ю",
-  ya: "я",
-  "o'": "ў",
-  q: "қ",
-  "g'": "ғ",
   h: "ҳ",
+  q: "қ",
   A: "А",
   B: "Б",
   V: "В",
   G: "Г",
   D: "Д",
   E: "Е",
-  Yo: "Ё",
   J: "Ж",
   Z: "З",
   I: "И",
@@ -135,38 +124,32 @@ const latinToCyrillic: Record<string, string> = {
   U: "У",
   F: "Ф",
   X: "Х",
-  Ts: "Ц",
-  Ch: "Ч",
-  Sh: "Ш",
-  "'": "Ъ",
-  E: "Э",
-  Yu: "Ю",
-  Ya: "Я",
-  "O'": "Ў",
-  Q: "Қ",
-  "G'": "Ғ",
   H: "Ҳ",
+  Q: "Қ",
 }
 
 // Special combinations for Latin to Cyrillic
-const latinSpecialCombinations = [
-  "yo",
-  "ch",
-  "sh",
-  "ts",
-  "yu",
-  "ya",
-  "o'",
-  "g'",
-  "Yo",
-  "Ch",
-  "Sh",
-  "Ts",
-  "Yu",
-  "Ya",
-  "O'",
-  "G'",
+const latinSpecialCombinations: [string, string][] = [
+  ["yo", "ё"],
+  ["ch", "ч"],
+  ["sh", "ш"],
+  ["ts", "ц"],
+  ["yu", "ю"],
+  ["ya", "я"],
+  ["o'", "ў"],
+  ["g'", "ғ"],
+  ["Yo", "Ё"],
+  ["Ch", "Ч"],
+  ["Sh", "Ш"],
+  ["Ts", "Ц"],
+  ["Yu", "Ю"],
+  ["Ya", "Я"],
+  ["O'", "Ў"],
+  ["G'", "Ғ"],
 ]
+
+// Special combinations for Cyrillic to Latin
+const cyrillicSpecialChars: string[] = ["ё", "ч", "ш", "ц", "ю", "я", "ў", "ғ", "Ё", "Ч", "Ш", "Ц", "Ю", "Я", "Ў", "Ғ"]
 
 /**
  * Transliterate text between Cyrillic and Latin Uzbek
@@ -176,6 +159,8 @@ const latinSpecialCombinations = [
  * @returns Transliterated text
  */
 export function transliterate(text: string, direction: "cyrillic-to-latin" | "latin-to-cyrillic"): string {
+  if (!text) return ""
+
   // Handle HTML content by preserving tags
   if (text.includes("<")) {
     // Split text by HTML tags
@@ -200,29 +185,32 @@ export function transliterate(text: string, direction: "cyrillic-to-latin" | "la
  */
 function transliterateText(text: string, direction: "cyrillic-to-latin" | "latin-to-cyrillic"): string {
   if (direction === "cyrillic-to-latin") {
-    return text
+    let result = text
+
+    // First replace special characters
+    for (const char of cyrillicSpecialChars) {
+      if (result.includes(char)) {
+        result = result.split(char).join(cyrillicToLatin[char] || char)
+      }
+    }
+
+    // Then replace remaining chars
+    return result
       .split("")
       .map((char) => cyrillicToLatin[char] || char)
       .join("")
   } else {
-    // For Latin to Cyrillic, we need to handle special combinations first
     let result = text
 
-    // Replace special combinations
-    for (const combo of latinSpecialCombinations) {
-      const regex = new RegExp(combo, "g")
-      result = result.replace(regex, (match) => {
-        return latinToCyrillic[match] || match
-      })
+    // First replace special combinations
+    for (const [latin, cyrillic] of latinSpecialCombinations) {
+      result = result.split(latin).join(cyrillic)
     }
 
-    // Replace remaining single characters
+    // Then replace remaining single characters
     return result
       .split("")
-      .map((char) => {
-        // Skip characters that were already processed as part of combinations
-        return latinToCyrillic[char] || char
-      })
+      .map((char) => latinToCyrillic[char] || char)
       .join("")
   }
 }

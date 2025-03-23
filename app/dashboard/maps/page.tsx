@@ -100,8 +100,8 @@ export default function MapsPage() {
       if (target.files && target.files[0]) {
         // Simulate file upload
         toast({
-          title: "Success",
-          description: "Map has been updated successfully",
+          title: t("success"),
+          description: t("mapUpdatedSuccessfully"),
         })
 
         // Update the lastUpdated timestamp only for the current language
@@ -120,8 +120,15 @@ export default function MapsPage() {
   const handleEditDetails = (id: string) => {
     // In a real application, this would open a modal or navigate to an edit page
     toast({
-      title: "Edit Details",
-      description: "This would open a form to edit map details",
+      title: t("editDetails"),
+      description: t("editMapDetailsDescription"),
+    })
+  }
+
+  const handleSaveMap = () => {
+    toast({
+      title: t("success"),
+      description: t("mapSavedSuccessfully"),
     })
   }
 
@@ -147,68 +154,76 @@ export default function MapsPage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader className="filter-section-dark">
-            <CardTitle className="text-white">{t("manageMaps")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <Table>
-              <TableHeader className="bg-gray-100 dark:bg-gray-800">
-                <TableRow>
-                  <TableHead>{t("preview")}</TableHead>
-                  <TableHead>{t("name")}</TableHead>
-                  <TableHead>{t("description")}</TableHead>
-                  <TableHead>{t("lastUpdated")}</TableHead>
-                  <TableHead>{t("actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mapsByLanguage[language]?.map((map) => (
-                  <TableRow key={map.id} className="border-gray-200 dark:border-gray-700">
-                    <TableCell>
-                      <div className="relative h-20 w-32 overflow-hidden rounded border">
-                        <Image src={map.imageUrl || "/placeholder.svg"} alt={map.name} fill className="object-cover" />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{map.name}</TableCell>
-                    <TableCell>{map.description}</TableCell>
-                    <TableCell>{map.lastUpdated}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                          onClick={() => handleUploadMap(map.id)}
-                        >
-                          <Upload className="h-4 w-4" />
-                          {t("uploadNew")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                          onClick={() => handleEditDetails(map.id)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          {t("editDetails")}
-                        </Button>
-                      </div>
-                    </TableCell>
+        <div className="space-y-6">
+          {/* Existing Maps Table */}
+          <Card>
+            <CardHeader className="bg-primary text-primary-foreground">
+              <CardTitle>{t("manageMaps")}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <Table>
+                <TableHeader className="bg-gray-100 dark:bg-gray-800">
+                  <TableRow>
+                    <TableHead>{t("preview")}</TableHead>
+                    <TableHead>{t("name")}</TableHead>
+                    <TableHead>{t("description")}</TableHead>
+                    <TableHead>{t("lastUpdated")}</TableHead>
+                    <TableHead>{t("actions")}</TableHead>
                   </TableRow>
-                ))}
-                {!mapsByLanguage[language] ||
-                  (mapsByLanguage[language].length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        No maps found for this language.
+                </TableHeader>
+                <TableBody>
+                  {mapsByLanguage[language]?.map((map) => (
+                    <TableRow key={map.id} className="border-gray-200 dark:border-gray-700">
+                      <TableCell>
+                        <div className="relative h-20 w-32 overflow-hidden rounded border">
+                          <Image
+                            src={map.imageUrl || "/placeholder.svg"}
+                            alt={map.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{map.name}</TableCell>
+                      <TableCell>{map.description}</TableCell>
+                      <TableCell>{map.lastUpdated}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            onClick={() => handleUploadMap(map.id)}
+                          >
+                            <Upload className="h-4 w-4" />
+                            {t("uploadNew")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            onClick={() => handleEditDetails(map.id)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            {t("editDetails")}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  {!mapsByLanguage[language] ||
+                    (mapsByLanguage[language].length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          {t("noMapsFound")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   )
