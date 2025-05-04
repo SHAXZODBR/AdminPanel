@@ -1,24 +1,103 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
-import {
-  mockUsers,
-  mockLeaders,
-  mockTags,
-  mockCategories,
-  mockArticles,
-  mockDepartments,
-  type User,
-  type Leader,
-  type Tag,
-  type Category,
-  type Article,
-  type Department,
-  mockSubordinateOrganizations,
-  mockRegionalCouncils,
-  type SubordinateOrganization,
-  type RegionalCouncil,
-} from "@/lib/data"
+import type React from "react"
+
+import { createContext, useState, useContext, type ReactNode, useEffect, useCallback, useRef } from "react"
+
+// Define types for all entities
+export type User = {
+  id: string
+  login: string
+  username?: string
+  email?: string
+  createdAt: string
+}
+
+export type Leader = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  fullName: string
+  position: string
+  phoneNumber: string
+  email: string
+  bio: string
+  photo?: string
+  createdAt: string
+}
+
+export type Tag = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  name: string
+  alias: string
+  createdAt: string
+}
+
+export type Category = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  name: string
+  parent: string
+  position: number
+  createdAt: string
+}
+
+export type Article = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  title: string
+  category: string
+  image: string
+  author: string
+  views: number
+  createdAt: string
+  content?: string
+}
+
+export type Department = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  name: string
+  type: "department" | "sector"
+  head: string
+  phoneNumber: string
+  email: string
+  createdAt: string
+}
+
+export type SubordinateOrganization = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  name: string
+  type: "organization" | "institution"
+  head: string
+  phoneNumber: string
+  email: string
+  address: string
+  createdAt: string
+}
+
+export type RegionalCouncil = {
+  id: string
+  language: "en" | "ru" | "uz" | "uz-cyrl"
+  name: string
+  region: string
+  head: string
+  phoneNumber: string
+  email: string
+  address: string
+  createdAt: string
+}
+
+export type NewsItem = {
+  id: string
+  title: string
+  content: string
+  category: string
+  date: string
+  language: string
+  images?: string[]
+}
 
 type StoreContextType = {
   users: User[]
@@ -29,772 +108,500 @@ type StoreContextType = {
   departments: Record<string, Department[]>
   subordinateOrganizations: Record<string, SubordinateOrganization[]>
   regionalCouncils: Record<string, RegionalCouncil[]>
+  news: NewsItem[]
+  loading: Record<string, boolean>
+  setLoading: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 
-  addUser: (user: Omit<User, "id" | "createdAt">) => void
-  updateUser: (id: string, userData: Partial<User>) => void
-  deleteUser: (id: string) => void
+  addUser: (user: Omit<User, "id" | "createdAt">) => Promise<User>
+  updateUser: (id: string, userData: Partial<User>) => Promise<User>
+  deleteUser: (id: string) => Promise<void>
 
-  addLeader: (leader: Omit<Leader, "id" | "createdAt">) => void
-  updateLeader: (id: string, language: string, leaderData: Partial<Leader>) => void
-  deleteLeader: (id: string, language: string) => void
+  addLeader: (leader: Omit<Leader, "id" | "createdAt">) => Promise<Leader>
+  updateLeader: (id: string, language: string, leaderData: Partial<Leader>) => Promise<Leader>
+  deleteLeader: (id: string, language: string) => Promise<void>
 
-  addTag: (tag: Omit<Tag, "id" | "createdAt">) => void
-  updateTag: (id: string, language: string, tagData: Partial<Tag>) => void
-  deleteTag: (id: string, language: string) => void
+  addTag: (tag: Omit<Tag, "id" | "createdAt">) => Promise<Tag>
+  updateTag: (id: string, language: string, tagData: Partial<Tag>) => Promise<Tag>
+  deleteTag: (id: string, language: string) => Promise<void>
 
-  addCategory: (category: Omit<Category, "id" | "createdAt">) => void
-  updateCategory: (id: string, language: string, categoryData: Partial<Category>) => void
-  deleteCategory: (id: string, language: string) => void
+  addCategory: (category: Omit<Category, "id" | "createdAt">) => Promise<Category>
+  updateCategory: (id: string, language: string, categoryData: Partial<Category>) => Promise<Category>
+  deleteCategory: (id: string, language: string) => Promise<void>
 
-  addArticle: (article: Omit<Article, "id" | "createdAt">) => void
-  updateArticle: (id: string, language: string, articleData: Partial<Article>) => void
-  deleteArticle: (id: string, language: string) => void
+  addArticle: (article: Omit<Article, "id" | "createdAt">) => Promise<Article>
+  updateArticle: (id: string, language: string, articleData: Partial<Article>) => Promise<Article>
+  deleteArticle: (id: string) => Promise<void>
 
-  addDepartment: (department: Omit<Department, "id" | "createdAt">) => void
-  updateDepartment: (id: string, language: string, departmentData: Partial<Department>) => void
-  deleteDepartment: (id: string, language: string) => void
+  addDepartment: (department: Omit<Department, "id" | "createdAt">) => Promise<Department>
+  updateDepartment: (id: string, language: string, departmentData: Partial<Department>) => Promise<Department>
+  deleteDepartment: (id: string) => Promise<void>
 
-  addSubordinateOrganization: (org: Omit<SubordinateOrganization, "id" | "createdAt">) => void
-  updateSubordinateOrganization: (id: string, language: string, orgData: Partial<SubordinateOrganization>) => void
-  deleteSubordinateOrganization: (id: string, language: string) => void
+  addSubordinateOrganization: (
+    org: Omit<SubordinateOrganization, "id" | "createdAt">,
+  ) => Promise<SubordinateOrganization>
+  updateSubordinateOrganization: (
+    id: string,
+    language: string,
+    orgData: Partial<SubordinateOrganization>,
+  ) => Promise<SubordinateOrganization>
+  deleteSubordinateOrganization: (id: string) => Promise<void>
 
-  addRegionalCouncil: (council: Omit<RegionalCouncil, "id" | "createdAt">) => void
-  updateRegionalCouncil: (id: string, language: string, councilData: Partial<RegionalCouncil>) => void
-  deleteRegionalCouncil: (id: string, language: string) => void
+  addRegionalCouncil: (council: Omit<RegionalCouncil, "id" | "createdAt">) => Promise<RegionalCouncil>
+  updateRegionalCouncil: (
+    id: string,
+    language: string,
+    councilData: Partial<RegionalCouncil>,
+  ) => Promise<RegionalCouncil>
+  deleteRegionalCouncil: (id: string) => Promise<void>
+
+  // News operations
+  addNews: (news: NewsItem) => Promise<NewsItem>
+  updateNews: (id: string, newsData: Partial<NewsItem>) => Promise<NewsItem>
+  deleteNews: (id: string) => Promise<void>
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined)
 
+// Generate a unique ID
+const generateUniqueId = () => {
+  return Date.now().toString() + Math.random().toString(36).substring(2, 9)
+}
+
+// Format current date for created timestamps
+const getFormattedDate = () => {
+  const now = new Date()
+  return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}.${now.getFullYear()} ${now.getHours().toString().padStart(2, "0")}:${now
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}`
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>(mockUsers)
-  const [leaders, setLeaders] = useState<Record<string, Leader[]>>(mockLeaders)
-  const [tags, setTags] = useState<Record<string, Tag[]>>(mockTags)
-  const [categories, setCategories] = useState<Record<string, Category[]>>(mockCategories)
-  const [articles, setArticles] = useState<Record<string, Article[]>>(mockArticles)
-  const [departments, setDepartments] = useState<Record<string, Department[]>>(mockDepartments)
-  const [subordinateOrganizations, setSubordinateOrganizations] =
-    useState<Record<string, SubordinateOrganization[]>>(mockSubordinateOrganizations)
-  const [regionalCouncils, setRegionalCouncils] = useState<Record<string, RegionalCouncil[]>>(mockRegionalCouncils)
+  // Initialize state with empty arrays
+  const [users, setUsers] = useState<User[]>([])
+  const [leaders, setLeaders] = useState<Record<string, Leader[]>>({ en: [], ru: [], uz: [], "uz-cyrl": [] })
+  const [tags, setTags] = useState<Record<string, Tag[]>>({ en: [], ru: [], uz: [], "uz-cyrl": [] })
+  const [categories, setCategories] = useState<Record<string, Category[]>>({ en: [], ru: [], uz: [], "uz-cyrl": [] })
+  const [articles, setArticles] = useState<Record<string, Article[]>>({ en: [], ru: [], uz: [], "uz-cyrl": [] })
+  const [departments, setDepartments] = useState<Record<string, Department[]>>({
+    en: [],
+    ru: [],
+    uz: [],
+    "uz-cyrl": [],
+  })
+  const [subordinateOrganizations, setSubordinateOrganizations] = useState<Record<string, SubordinateOrganization[]>>({
+    en: [],
+    ru: [],
+    uz: [],
+    "uz-cyrl": [],
+  })
+  const [regionalCouncils, setRegionalCouncils] = useState<Record<string, RegionalCouncil[]>>({
+    en: [],
+    ru: [],
+    uz: [],
+    "uz-cyrl": [],
+  })
+  const [news, setNews] = useState<NewsItem[]>([])
+  const [loading, setLoading] = useState<Record<string, boolean>>({
+    users: false,
+    leaders: false,
+    tags: false,
+    categories: false,
+    articles: false,
+    departments: false,
+    subordinateOrganizations: false,
+    regionalCouncils: false,
+    news: false,
+  })
 
-  // Format current date for created timestamps
-  const getFormattedDate = () => {
-    const now = new Date()
-    return `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}.${now.getFullYear()} ${now.getHours().toString().padStart(2, "0")}:${now
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`
-  }
+  // Add a ref to track operation timeouts
+  const timeoutsRef = useRef<Record<string, NodeJS.Timeout>>({})
 
-  // Generate a unique ID
-  const generateUniqueId = () => {
-    return Date.now().toString() + Math.random().toString(36).substring(2, 9)
-  }
+  // Cleanup function for timeouts
+  const clearAllTimeouts = useCallback(() => {
+    Object.values(timeoutsRef.current).forEach((timeout) => {
+      clearTimeout(timeout)
+    })
+    timeoutsRef.current = {}
+  }, [])
 
-  // User operations
-  const addUser = (user: Omit<User, "id" | "createdAt">) => {
-    const newUser: User = {
-      id: generateUniqueId(),
-      createdAt: getFormattedDate(),
-      ...user,
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearAllTimeouts()
     }
-    setUsers((prev) => [...prev, newUser])
-  }
+  }, [clearAllTimeouts])
 
-  const updateUser = (id: string, userData: Partial<User>) => {
-    setUsers((prev) => {
-      const updated = prev.map((user) => (user.id === id ? { ...user, ...userData } : user))
-      return [...updated] // Return a new array to ensure re-render
+  // User operations with timeout handling
+  const addUser = async (user: Omit<User, "id" | "createdAt">) => {
+    // Set a timeout to ensure the operation completes
+    return new Promise<User>((resolve, reject) => {
+      try {
+        const newUser: User = {
+          id: generateUniqueId(),
+          login: user.login,
+          username: user.username || user.login,
+          email: user.email || "",
+          createdAt: getFormattedDate(),
+        }
+
+        setUsers((prev) => [newUser, ...prev])
+        resolve(newUser)
+      } catch (error) {
+        reject(error)
+      }
     })
   }
 
-  const deleteUser = (id: string) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id))
+  // Fix the updateUser function to handle updates immediately
+  const updateUser = async (id: string, userData: Partial<User>) => {
+    return new Promise<User>((resolve, reject) => {
+      try {
+        const userIndex = users.findIndex((user) => user.id === id)
+
+        if (userIndex === -1) {
+          console.warn(`User with ID ${id} not found in store. Returning existing state.`)
+          reject(new Error("User not found"))
+          return
+        }
+
+        const updatedUser = {
+          ...users[userIndex],
+          ...userData,
+          // Ensure these fields are properly updated
+          login: userData.login || users[userIndex].login,
+          username: userData.username || userData.login || users[userIndex].username || users[userIndex].login,
+        }
+
+        // Create a new array with the updated user
+        const newUsers = [...users]
+        newUsers[userIndex] = updatedUser
+
+        // Update the state immediately to prevent UI lag
+        setUsers(newUsers)
+
+        // Resolve with the updated user
+        resolve(updatedUser)
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  const deleteUser = async (id: string) => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        setUsers((prev) => prev.filter((user) => user.id !== id))
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
   }
 
   // Leader operations
-  const addLeader = (leader: Omit<Leader, "id" | "createdAt">) => {
-    const language = leader.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new leader
-    const newId = generateUniqueId()
-
+  const addLeader = async (leader: Omit<Leader, "id" | "createdAt">) => {
     const newLeader: Leader = {
-      id: newId,
+      id: generateUniqueId(),
+      language: leader.language,
+      fullName: leader.fullName,
+      position: leader.position,
+      phoneNumber: leader.phoneNumber,
+      email: leader.email,
+      bio: leader.bio,
+      photo: leader.photo,
       createdAt: getFormattedDate(),
-      ...leader,
     }
+    setLeaders((prev) => ({
+      ...prev,
+      [leader.language]: [newLeader, ...(prev[leader.language] || [])],
+    }))
+    return newLeader
+  }
 
-    setLeaders((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  // Also update the other entity update functions with a similar delay pattern
+  const updateLeader = async (id: string, language: string, leaderData: Partial<Leader>) => {
+    return new Promise<Leader>((resolve, reject) => {
+      try {
+        const updatedLeader = leaders[language]?.find((leader) => leader.id === id)
+        if (!updatedLeader) throw new Error("Leader not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
+        const newLeader = { ...updatedLeader, ...leaderData }
+
+        // Add a slight delay to simulate API call
+        setTimeout(() => {
+          setLeaders((prev) => ({
+            ...prev,
+            [language]: prev[language].map((leader) => (leader.id === id ? newLeader : leader)),
+          }))
+          resolve(newLeader)
+        }, 300)
+      } catch (error) {
+        reject(error)
       }
-
-      // Add the new leader to the language-specific array
-      newState[language] = [...newState[language], newLeader]
-
-      return newState
     })
   }
 
-  const updateLeader = (id: string, language: string, leaderData: Partial<Leader>) => {
-    setLeaders((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the leader in the current language
-      const leaderExists = newState[language].some((leader) => leader.id === id)
-
-      if (leaderExists) {
-        // Update the leader in the language-specific array
-        newState[language] = newState[language].map((leader) =>
-          leader.id === id ? { ...leader, ...leaderData } : leader,
-        )
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundLeader = null
-        let foundLanguage = ""
-
-        // Find the leader in any language
-        for (const lang of Object.keys(newState)) {
-          const leader = newState[lang].find((l) => l.id === id)
-          if (leader) {
-            foundLeader = leader
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundLeader && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((l) => l.id !== id)
-
-          // Add to new language with updates
-          const updatedLeader = { ...foundLeader, ...leaderData, language: language as "en" | "ru" | "uz" | "uz-cyrl" }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedLeader]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
-  }
-
-  const deleteLeader = (id: string, language: string) => {
-    setLeaders((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
-
-      // Remove the leader from the language-specific array
-      newState[language] = newState[language].filter((leader) => leader.id !== id)
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+  const deleteLeader = async (id: string, language: string) => {
+    setLeaders((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((leader) => leader.id !== id),
+    }))
   }
 
   // Tag operations
-  const addTag = (tag: Omit<Tag, "id" | "createdAt">) => {
-    const language = tag.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new tag
-    const newId = generateUniqueId()
-
+  const addTag = async (tag: Omit<Tag, "id" | "createdAt">) => {
     const newTag: Tag = {
-      id: newId,
+      id: generateUniqueId(),
+      language: tag.language,
+      name: tag.name,
+      alias: tag.alias,
       createdAt: getFormattedDate(),
-      ...tag,
     }
-
-    setTags((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Add the new tag to the language-specific array
-      newState[language] = [...newState[language], newTag]
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    setTags((prev) => ({
+      ...prev,
+      [tag.language]: [newTag, ...(prev[tag.language] || [])],
+    }))
+    return newTag
   }
 
-  const updateTag = (id: string, language: string, tagData: Partial<Tag>) => {
-    setTags((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const updateTag = async (id: string, language: string, tagData: Partial<Tag>) => {
+    const updatedTag = tags[language]?.find((tag) => tag.id === id)
+    if (!updatedTag) throw new Error("Tag not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the tag in the current language
-      const tagExists = newState[language].some((tag) => tag.id === id)
-
-      if (tagExists) {
-        // Update the tag in the language-specific array
-        newState[language] = newState[language].map((tag) => (tag.id === id ? { ...tag, ...tagData } : tag))
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundTag = null
-        let foundLanguage = ""
-
-        // Find the tag in any language
-        for (const lang of Object.keys(newState)) {
-          const tag = newState[lang].find((t) => t.id === id)
-          if (tag) {
-            foundTag = tag
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundTag && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((t) => t.id !== id)
-
-          // Add to new language with updates
-          const updatedTag = { ...foundTag, ...tagData, language: language as "en" | "ru" | "uz" | "uz-cyrl" }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedTag]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newTag = { ...updatedTag, ...tagData }
+    setTags((prev) => ({
+      ...prev,
+      [language]: prev[language].map((tag) => (tag.id === id ? newTag : tag)),
+    }))
+    return newTag
   }
 
-  const deleteTag = (id: string, language: string) => {
-    setTags((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
-
-      // Remove the tag from the language-specific array
-      newState[language] = newState[language].filter((tag) => tag.id !== id)
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+  const deleteTag = async (id: string, language: string) => {
+    setTags((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((tag) => tag.id !== id),
+    }))
   }
 
   // Category operations
-  const addCategory = (category: Omit<Category, "id" | "createdAt">) => {
-    const language = category.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new category
-    const newId = generateUniqueId()
-
+  const addCategory = async (category: Omit<Category, "id" | "createdAt">) => {
     const newCategory: Category = {
-      id: newId,
+      id: generateUniqueId(),
+      language: category.language,
+      name: category.name,
+      parent: category.parent,
+      position: category.position,
       createdAt: getFormattedDate(),
-      ...category,
     }
-
-    setCategories((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Add the new category to the language-specific array
-      newState[language] = [...newState[language], newCategory]
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    setCategories((prev) => ({
+      ...prev,
+      [category.language]: [newCategory, ...(prev[category.language] || [])],
+    }))
+    return newCategory
   }
 
-  const updateCategory = (id: string, language: string, categoryData: Partial<Category>) => {
-    setCategories((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const updateCategory = async (id: string, language: string, categoryData: Partial<Category>) => {
+    const updatedCategory = categories[language]?.find((category) => category.id === id)
+    if (!updatedCategory) throw new Error("Category not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the category in the current language
-      const categoryExists = newState[language].some((category) => category.id === id)
-
-      if (categoryExists) {
-        // Update the category in the language-specific array
-        newState[language] = newState[language].map((category) =>
-          category.id === id ? { ...category, ...categoryData } : category,
-        )
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundCategory = null
-        let foundLanguage = ""
-
-        // Find the category in any language
-        for (const lang of Object.keys(newState)) {
-          const category = newState[lang].find((c) => c.id === id)
-          if (category) {
-            foundCategory = category
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundCategory && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((c) => c.id !== id)
-
-          // Add to new language with updates
-          const updatedCategory = {
-            ...foundCategory,
-            ...categoryData,
-            language: language as "en" | "ru" | "uz" | "uz-cyrl",
-          }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedCategory]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newCategory = { ...updatedCategory, ...categoryData }
+    setCategories((prev) => ({
+      ...prev,
+      [language]: prev[language].map((category) => (category.id === id ? newCategory : category)),
+    }))
+    return newCategory
   }
 
-  const deleteCategory = (id: string, language: string) => {
-    setCategories((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
-
-      // Remove the category from the language-specific array
-      newState[language] = newState[language].filter((category) => category.id !== id)
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+  const deleteCategory = async (id: string, language: string) => {
+    setCategories((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((category) => category.id !== id),
+    }))
   }
 
   // Article operations
-  const addArticle = (article: Omit<Article, "id" | "createdAt">) => {
-    const language = article.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new article
-    const newId = generateUniqueId()
-
+  const addArticle = async (article: Omit<Article, "id" | "createdAt">) => {
     const newArticle: Article = {
-      id: newId,
+      id: generateUniqueId(),
+      language: article.language,
+      title: article.title,
+      category: article.category,
+      image: article.image,
+      author: article.author,
+      views: article.views || 0,
+      content: article.content,
       createdAt: getFormattedDate(),
-      ...article,
     }
-
-    setArticles((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Add the new article to the language-specific array
-      newState[language] = [...newState[language], newArticle]
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    setArticles((prev) => ({
+      ...prev,
+      [article.language]: [newArticle, ...(prev[article.language] || [])],
+    }))
+    return newArticle
   }
 
-  const updateArticle = (id: string, language: string, articleData: Partial<Article>) => {
-    setArticles((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const updateArticle = async (id: string, language: string, articleData: Partial<Article>) => {
+    const updatedArticle = articles[language]?.find((article) => article.id === id)
+    if (!updatedArticle) throw new Error("Article not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the article in the current language
-      const articleExists = newState[language].some((article) => article.id === id)
-
-      if (articleExists) {
-        // Update the article in the language-specific array
-        newState[language] = newState[language].map((article) =>
-          article.id === id ? { ...article, ...articleData } : article,
-        )
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundArticle = null
-        let foundLanguage = ""
-
-        // Find the article in any language
-        for (const lang of Object.keys(newState)) {
-          const article = newState[lang].find((a) => a.id === id)
-          if (article) {
-            foundArticle = article
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundArticle && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((a) => a.id !== id)
-
-          // Add to new language with updates
-          const updatedArticle = {
-            ...foundArticle,
-            ...articleData,
-            language: language as "en" | "ru" | "uz" | "uz-cyrl",
-          }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedArticle]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newArticle = { ...updatedArticle, ...articleData }
+    setArticles((prev) => ({
+      ...prev,
+      [language]: prev[language].map((article) => (article.id === id ? newArticle : article)),
+    }))
+    return newArticle
   }
 
-  const deleteArticle = (id: string, language: string) => {
-    setArticles((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
-
-      // Remove the article from the language-specific array
-      newState[language] = newState[language].filter((article) => article.id !== id)
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+  const deleteArticle = async (id: string, language: string) => {
+    setArticles((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((article) => article.id !== id),
+    }))
   }
 
   // Department operations
-  const addDepartment = (department: Omit<Department, "id" | "createdAt">) => {
-    const language = department.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new department
-    const newId = generateUniqueId()
-
+  const addDepartment = async (department: Omit<Department, "id" | "createdAt">) => {
     const newDepartment: Department = {
-      id: newId,
+      id: generateUniqueId(),
+      language: department.language,
+      name: department.name,
+      type: department.type,
+      head: department.head,
+      phoneNumber: department.phoneNumber,
+      email: department.email,
       createdAt: getFormattedDate(),
-      ...department,
     }
-
-    setDepartments((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Add the new department to the language-specific array
-      newState[language] = [...newState[language], newDepartment]
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    setDepartments((prev) => ({
+      ...prev,
+      [department.language]: [newDepartment, ...(prev[department.language] || [])],
+    }))
+    return newDepartment
   }
 
-  const updateDepartment = (id: string, language: string, departmentData: Partial<Department>) => {
-    setDepartments((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const updateDepartment = async (id: string, language: string, departmentData: Partial<Department>) => {
+    const updatedDepartment = departments[language]?.find((department) => department.id === id)
+    if (!updatedDepartment) throw new Error("Department not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the department in the current language
-      const departmentExists = newState[language].some((department) => department.id === id)
-
-      if (departmentExists) {
-        // Update the department in the language-specific array
-        newState[language] = newState[language].map((department) =>
-          department.id === id ? { ...department, ...departmentData } : department,
-        )
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundDepartment = null
-        let foundLanguage = ""
-
-        // Find the department in any language
-        for (const lang of Object.keys(newState)) {
-          const department = newState[lang].find((d) => d.id === id)
-          if (department) {
-            foundDepartment = department
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundDepartment && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((d) => d.id !== id)
-
-          // Add to new language with updates
-          const updatedDepartment = {
-            ...foundDepartment,
-            ...departmentData,
-            language: language as "en" | "ru" | "uz" | "uz-cyrl",
-          }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedDepartment]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newDepartment = { ...updatedDepartment, ...departmentData }
+    setDepartments((prev) => ({
+      ...prev,
+      [language]: prev[language].map((department) => (department.id === id ? newDepartment : department)),
+    }))
+    return newDepartment
   }
 
-  const deleteDepartment = (id: string, language: string) => {
-    setDepartments((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
-
-      // Remove the department from the language-specific array
-      newState[language] = newState[language].filter((department) => department.id !== id)
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+  const deleteDepartment = async (id: string, language: string) => {
+    setDepartments((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((department) => department.id !== id),
+    }))
   }
 
   // Subordinate Organization operations
-  const addSubordinateOrganization = (org: Omit<SubordinateOrganization, "id" | "createdAt">) => {
-    const language = org.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new organization
-    const newId = generateUniqueId()
-
+  const addSubordinateOrganization = async (org: Omit<SubordinateOrganization, "id" | "createdAt">) => {
     const newOrg: SubordinateOrganization = {
-      id: newId,
+      id: generateUniqueId(),
+      language: org.language,
+      name: org.name,
+      type: org.type,
+      head: org.head,
+      phoneNumber: org.phoneNumber,
+      email: org.email,
+      address: org.address,
       createdAt: getFormattedDate(),
-      ...org,
     }
-
-    setSubordinateOrganizations((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Add the new organization to the language-specific array
-      newState[language] = [...newState[language], newOrg]
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    setSubordinateOrganizations((prev) => ({
+      ...prev,
+      [org.language]: [newOrg, ...(prev[org.language] || [])],
+    }))
+    return newOrg
   }
 
-  const updateSubordinateOrganization = (id: string, language: string, orgData: Partial<SubordinateOrganization>) => {
-    setSubordinateOrganizations((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const updateSubordinateOrganization = async (
+    id: string,
+    language: string,
+    orgData: Partial<SubordinateOrganization>,
+  ) => {
+    const updatedOrg = subordinateOrganizations[language]?.find((org) => org.id === id)
+    if (!updatedOrg) throw new Error("Subordinate Organization not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the organization in the current language
-      const orgExists = newState[language].some((org) => org.id === id)
-
-      if (orgExists) {
-        // Update the organization in the language-specific array
-        newState[language] = newState[language].map((org) => (org.id === id ? { ...org, ...orgData } : org))
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundOrg = null
-        let foundLanguage = ""
-
-        // Find the organization in any language
-        for (const lang of Object.keys(newState)) {
-          const org = newState[lang].find((o) => o.id === id)
-          if (org) {
-            foundOrg = org
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundOrg && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((o) => o.id !== id)
-
-          // Add to new language with updates
-          const updatedOrg = { ...foundOrg, ...orgData, language: language as "en" | "ru" | "uz" | "uz-cyrl" }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedOrg]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newOrg = { ...updatedOrg, ...orgData }
+    setSubordinateOrganizations((prev) => ({
+      ...prev,
+      [language]: prev[language].map((org) => (org.id === id ? newOrg : org)),
+    }))
+    return newOrg
   }
 
-  const deleteSubordinateOrganization = (id: string, language: string) => {
-    setSubordinateOrganizations((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
-
-      // Remove the organization from the language-specific array
-      newState[language] = newState[language].filter((org) => org.id !== id)
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+  const deleteSubordinateOrganization = async (id: string, language: string) => {
+    setSubordinateOrganizations((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((org) => org.id !== id),
+    }))
   }
 
   // Regional Council operations
-  const addRegionalCouncil = (council: Omit<RegionalCouncil, "id" | "createdAt">) => {
-    const language = council.language as "en" | "ru" | "uz" | "uz-cyrl"
-
-    // Generate a unique ID for the new council
-    const newId = generateUniqueId()
-
+  const addRegionalCouncil = async (council: Omit<RegionalCouncil, "id" | "createdAt">) => {
     const newCouncil: RegionalCouncil = {
-      id: newId,
+      id: generateUniqueId(),
+      language: council.language,
+      name: council.name,
+      region: council.region,
+      head: council.head,
+      phoneNumber: council.phoneNumber,
+      email: council.email,
+      address: council.address,
       createdAt: getFormattedDate(),
-      ...council,
     }
-
-    setRegionalCouncils((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
-
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Add the new council to the language-specific array
-      newState[language] = [...newState[language], newCouncil]
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    setRegionalCouncils((prev) => ({
+      ...prev,
+      [council.language]: [newCouncil, ...(prev[council.language] || [])],
+    }))
+    return newCouncil
   }
 
-  const updateRegionalCouncil = (id: string, language: string, councilData: Partial<RegionalCouncil>) => {
-    setRegionalCouncils((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const updateRegionalCouncil = async (id: string, language: string, councilData: Partial<RegionalCouncil>) => {
+    const updatedCouncil = regionalCouncils[language]?.find((council) => council.id === id)
+    if (!updatedCouncil) throw new Error("Regional Council not found")
 
-      // Initialize the language array if it doesn't exist
-      if (!newState[language]) {
-        newState[language] = []
-      }
-
-      // Find the council in the current language
-      const councilExists = newState[language].some((council) => council.id === id)
-
-      if (councilExists) {
-        // Update the council in the language-specific array
-        newState[language] = newState[language].map((council) =>
-          council.id === id ? { ...council, ...councilData } : council,
-        )
-      } else {
-        // If changing language, remove from old language and add to new one
-        let foundCouncil = null
-        let foundLanguage = ""
-
-        // Find the council in any language
-        for (const lang of Object.keys(newState)) {
-          const council = newState[lang].find((c) => c.id === id)
-          if (council) {
-            foundCouncil = council
-            foundLanguage = lang
-            break
-          }
-        }
-
-        if (foundCouncil && foundLanguage) {
-          // Remove from old language
-          newState[foundLanguage] = newState[foundLanguage].filter((c) => c.id !== id)
-
-          // Add to new language with updates
-          const updatedCouncil = {
-            ...foundCouncil,
-            ...councilData,
-            language: language as "en" | "ru" | "uz" | "uz-cyrl",
-          }
-          if (!newState[language]) {
-            newState[language] = []
-          }
-          newState[language] = [...newState[language], updatedCouncil]
-        }
-      }
-
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newCouncil = { ...updatedCouncil, ...councilData }
+    setRegionalCouncils((prev) => ({
+      ...prev,
+      [language]: prev[language].map((council) => (council.id === id ? newCouncil : council)),
+    }))
+    return newCouncil
   }
 
-  const deleteRegionalCouncil = (id: string, language: string) => {
-    setRegionalCouncils((prev) => {
-      // Create a new object to ensure React detects the state change
-      const newState = { ...prev }
+  const deleteRegionalCouncil = async (id: string, language: string) => {
+    setRegionalCouncils((prev) => ({
+      ...prev,
+      [language]: prev[language].filter((council) => council.id !== id),
+    }))
+  }
 
-      // Check if the language key exists
-      if (!newState[language]) {
-        return prev
-      }
+  // News operations
+  const addNews = async (newsItem: NewsItem) => {
+    const newNewsItem: NewsItem = {
+      ...newsItem,
+      id: generateUniqueId(),
+    }
+    setNews((prev) => [newNewsItem, ...prev])
+    return newNewsItem
+  }
 
-      // Remove the council from the language-specific array
-      newState[language] = newState[language].filter((council) => council.id !== id)
+  const updateNews = async (id: string, newsData: Partial<NewsItem>) => {
+    const updatedNews = news.find((item) => item.id === id)
+    if (!updatedNews) throw new Error("News item not found")
 
-      return { ...newState } // Return a new object to ensure re-render
-    })
+    const newNewsItem = { ...updatedNews, ...newsData }
+    setNews((prev) => prev.map((item) => (item.id === id ? newNewsItem : item)))
+    return newNewsItem
+  }
+
+  const deleteNews = async (id: string) => {
+    setNews((prev) => prev.filter((item) => item.id !== id))
   }
 
   return (
@@ -808,30 +615,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         departments,
         subordinateOrganizations,
         regionalCouncils,
+        news,
+        loading,
+        setLoading,
+
         addUser,
         updateUser,
         deleteUser,
+
         addLeader,
         updateLeader,
         deleteLeader,
+
         addTag,
         updateTag,
         deleteTag,
+
         addCategory,
         updateCategory,
         deleteCategory,
+
         addArticle,
         updateArticle,
         deleteArticle,
+
         addDepartment,
         updateDepartment,
         deleteDepartment,
+
         addSubordinateOrganization,
         updateSubordinateOrganization,
         deleteSubordinateOrganization,
+
         addRegionalCouncil,
         updateRegionalCouncil,
         deleteRegionalCouncil,
+
+        addNews,
+        updateNews,
+        deleteNews,
       }}
     >
       {children}
@@ -846,4 +668,3 @@ export const useStore = () => {
   }
   return context
 }
-

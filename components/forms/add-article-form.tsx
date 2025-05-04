@@ -3,168 +3,155 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useLanguage } from "@/components/language-provider"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
-import { Paperclip } from "lucide-react"
+import { RichTextEditor } from "@/components/rich-text-editor"
+import { ImageUpload } from "@/components/image-upload"
+import { useStore } from "@/lib/store"
 
 export function AddArticleForm() {
-  const { t } = useLanguage()
+  const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    poster: null as File | null,
-    additionalImages: [] as File[],
-    author: "",
-    parentCategory: "",
-    category: "",
-    title: "",
-    content: "",
-    tags: [] as string[],
-    publishDate: "",
-    socialShare: false,
-    audio: null as File | null,
-  })
+  const { categories, tags, addArticle } = useStore()
+
+  const [title, setTitle] = useState("")
+  const [translitTitle, setTranslitTitle] = useState("")
+  const [content, setContent] = useState("")
+  const [translitContent, setTranslitContent] = useState("")
+  const [categoryId, setCategoryId] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [image, setImage] = useState<string | null>(null)
+  const [language, setLanguage] = useState("uz")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    setIsSubmitting(true)
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Create the article using the store context
+      await addArticle({
+        title,
+        translitTitle,
+        content,
+        translitContent,
+        categoryId: Number.parseInt(categoryId),
+        tagIds: selectedTags.map((id) => Number.parseInt(id)),
+        image: image || "",
+        language,
+      })
+
       toast({
         title: "Success",
-        description: "Article has been created successfully",
+        description: "Article created successfully",
       })
-      setIsLoading(false)
-    }, 1000)
-  }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "poster" | "audio") => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFormData({ ...formData, [field]: file })
+      router.push("/dashboard/articles")
+    } catch (error) {
+      console.error("Error creating article:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create article",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
+  }
+
+  // Always show transliteration for Uzbek language
+  const showTransliteration = language === "uz"
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("addArticle")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("poster")}</label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e, "poster")}
-                className="hidden"
-                id="poster"
-              />
-              <Button type="button" variant="outline" onClick={() => document.getElementById("poster")?.click()}>
-                <Paperclip className="mr-2 h-4 w-4" />
-                {t("uploadPoster")}
-              </Button>
-              {formData.poster && <span className="text-sm">{formData.poster.name}</span>}
-            </div>
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+      </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t("parentCategory")}</label>
-              <Select
-                value={formData.parentCategory}
-                onValueChange={(value) => setFormData({ ...formData, parentCategory: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectParentCategory")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="life">Мелочи жизни</SelectItem>
-                  <SelectItem value="health">Здоровье</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {showTransliteration && (
+        <div className="space-y-2">
+          <Label htmlFor="translitTitle">Transliterated Title</Label>
+          <Input id="translitTitle" value={translitTitle} onChange={(e) => setTranslitTitle(e.target.value)} />
+        </div>
+      )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t("category")}</label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectCategory")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="economy">Экономика</SelectItem>
-                  <SelectItem value="politics">Политика</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger id="category">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("title")}</label>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder={t("title")}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="language">Language</Label>
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger id="language">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="uz">Uzbek</SelectItem>
+              <SelectItem value="ru">Russian</SelectItem>
+              <SelectItem value="en">English</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("content")}</label>
-            <Textarea
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder={t("content")}
-              rows={10}
-            />
-          </div>
+      <div className="space-y-2">
+        <Label>Tags</Label>
+        <div className="flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <Button
+              key={tag.id}
+              type="button"
+              variant={selectedTags.includes(tag.id.toString()) ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleTagToggle(tag.id.toString())}
+            >
+              {tag.name}
+            </Button>
+          ))}
+        </div>
+      </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="social-share"
-              checked={formData.socialShare}
-              onCheckedChange={(checked) => setFormData({ ...formData, socialShare: checked })}
-            />
-            <label htmlFor="social-share" className="text-sm font-medium">
-              {t("socialShare")}
-            </label>
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="content">Content</Label>
+        <RichTextEditor
+          initialContent={content}
+          initialTranslitContent={translitContent}
+          showTransliteration={showTransliteration}
+          onChange={setContent}
+          onTranslitChange={setTranslitContent}
+        />
+      </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("audio")}</label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="audio/*"
-                onChange={(e) => handleFileChange(e, "audio")}
-                className="hidden"
-                id="audio"
-              />
-              <Button type="button" variant="outline" onClick={() => document.getElementById("audio")?.click()}>
-                <Paperclip className="mr-2 h-4 w-4" />
-                {t("uploadAudio")}
-              </Button>
-              {formData.audio && <span className="text-sm">{formData.audio.name}</span>}
-            </div>
-          </div>
+      <div className="space-y-2">
+        <Label>Featured Image</Label>
+        <ImageUpload value={image} onChange={setImage} maxSize={5} maxWidth={1920} maxHeight={1080} />
+      </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? t("saving") : t("save")}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Creating..." : "Create Article"}
+      </Button>
+    </form>
   )
 }
-

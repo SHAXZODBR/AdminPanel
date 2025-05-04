@@ -22,12 +22,6 @@ export function LanguageSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-dashboard-accent border-dashboard-border">
         <DropdownMenuItem
-          onClick={() => setLanguage("uz-cyrl")}
-          className="text-dashboard-foreground hover:bg-dashboard-muted"
-        >
-          <span className={language === "uz-cyrl" ? "font-bold" : ""}>Ўзбекча (Кирилл)</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
           onClick={() => setLanguage("ru")}
           className="text-dashboard-foreground hover:bg-dashboard-muted"
         >
@@ -43,4 +37,3 @@ export function LanguageSwitcher() {
     </DropdownMenu>
   )
 }
-

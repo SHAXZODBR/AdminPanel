@@ -166,6 +166,26 @@ const translations = {
     youtubeVideoIdHelp: "YouTube видео ID рақамини киритинг",
     head: "Сарлавҳа",
     type: "Тур",
+    news: "Янгиликлар",
+    loading: "Юкланмоқда...",
+    error: "Хато",
+    success: "Муваффақият",
+    pleaseCompleteAllRequiredFields: "Барча мажбурий майдонларни тўлдиринг",
+    newsAddedSuccessfully: "Янгилик муваффақиятли қўшилди",
+    errorAddingNews: "Янгилик қўшишда хатолик юз берди",
+    newsUpdatedSuccessfully: "Янгилик муваффақиятли янгиланди",
+    errorUpdatingNews: "Янгиликни янгилашда хатолик юз берди",
+    newsDeletedSuccessfully: "Янгилик муваффақиятли ўчирилди",
+    errorDeletingNews: "Янгиликни ўчиришда хатолик юз берди",
+    errorFetchingNews: "Янгиликларни юклашда хатолик юз берди",
+    noNewsFound: "Янгиликлар топилмади",
+    newsNotFound: "Янгилик топилмади",
+    errorLoadingNews: "Янгиликни юклашда хатолик юз берди",
+    searchByTitle: "Сарлавҳа бўйича қидириш",
+    allCategories: "Барча категориялар",
+    allLanguages: "Барча тиллар",
+    selectCategory: "Категорияни танланг",
+    uploadImages: "Расмларни юклаш",
   },
   ru: {
     dashboard: "Панель управления",
@@ -320,6 +340,26 @@ const translations = {
     youtubeVideoIdHelp: "Введите ID номер YouTube видео",
     head: "Заголовок",
     type: "Тип",
+    news: "Новости",
+    loading: "Загрузка...",
+    error: "Ошибка",
+    success: "Успех",
+    pleaseCompleteAllRequiredFields: "Пожалуйста, заполните все обязательные поля",
+    newsAddedSuccessfully: "Новость успешно добавлена",
+    errorAddingNews: "Ошибка при добавлении новости",
+    newsUpdatedSuccessfully: "Новость успешно обновлена",
+    errorUpdatingNews: "Ошибка при обновлении новости",
+    newsDeletedSuccessfully: "Новость успешно удалена",
+    errorDeletingNews: "Ошибка при удалении новости",
+    errorFetchingNews: "Ошибка при загрузке новостей",
+    noNewsFound: "Новости не найдены",
+    newsNotFound: "Новость не найдена",
+    errorLoadingNews: "Ошибка при загрузке новости",
+    searchByTitle: "Поиск по названию",
+    allCategories: "Все категории",
+    allLanguages: "Все языки",
+    selectCategory: "Выберите категорию",
+    uploadImages: "Загрузить изображения",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -474,6 +514,26 @@ const translations = {
     youtubeVideoIdHelp: "YouTube video ID raqamini kiriting",
     head: "Sarlavha",
     type: "Tur",
+    news: "Yangiliklar",
+    loading: "Yuklanmoqda...",
+    error: "Xato",
+    success: "Muvaffaqiyat",
+    pleaseCompleteAllRequiredFields: "Barcha majburiy maydonlarni to'ldiring",
+    newsAddedSuccessfully: "Yangilik muvaffaqiyatli qo'shildi",
+    errorAddingNews: "Yangilik qo'shishda xatolik yuz berdi",
+    newsUpdatedSuccessfully: "Yangilik muvaffaqiyatli yangilandi",
+    errorUpdatingNews: "Yangilikni yangilashda xatolik yuz berdi",
+    newsDeletedSuccessfully: "Yangilik muvaffaqiyatli o'chirildi",
+    errorDeletingNews: "Yangilikni o'chirishda xatolik yuz berdi",
+    errorFetchingNews: "Yangiklarni yuklashda xatolik yuz berdi",
+    noNewsFound: "Yangiliklar topilmadi",
+    newsNotFound: "Yangilik topilmadi",
+    errorLoadingNews: "Yangilikni yuklashda xatolik yuz berdi",
+    searchByTitle: "Sarlavha bo'yicha qidirish",
+    allCategories: "Barcha kategoriyalar",
+    allLanguages: "Barcha tillar",
+    selectCategory: "Kategoriyani tanlang",
+    uploadImages: "Rasmlarni yuklash",
   },
 }
 
@@ -483,12 +543,14 @@ const LanguageContext = createContext<LanguageContextType>({
   t: (key) => key,
 })
 
+// Update the language options to only include 'uz' and 'ru' as specified
+// Remove 'uz-cyrl' option as it's not supported yet
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("ru")
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("language") as Language
-    if (savedLanguage && ["uz-cyrl", "ru", "uz"].includes(savedLanguage)) {
+    if (savedLanguage && ["ru", "uz"].includes(savedLanguage)) {
       setLanguage(savedLanguage)
     }
   }, [])
@@ -499,6 +561,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }
 
   const t = (key: string) => {
+    // First check if the language exists in translations
+    if (!translations[language]) {
+      // Fall back to Russian if the current language doesn't exist
+      return translations["ru"][key as keyof (typeof translations)["ru"]] || key
+    }
+
+    // Then check if the key exists for the language
     return translations[language][key as keyof (typeof translations)[typeof language]] || key
   }
 
@@ -510,4 +579,3 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useLanguage = () => useContext(LanguageContext)
-

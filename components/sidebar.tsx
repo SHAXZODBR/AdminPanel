@@ -95,7 +95,9 @@ export function Sidebar() {
               href={route.href}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                pathname === route.href ? "bg-[#e91e63] text-white" : "text-white hover:bg-[#3f4b5b]",
+                pathname === route.href
+                  ? "bg-dashboard-primary text-dashboard-primary-foreground"
+                  : "text-white hover:bg-[#3f4b5b]",
               )}
             >
               <route.icon className="h-5 w-5" />
@@ -119,4 +121,3 @@ export function Sidebar() {
     </div>
   )
 }
-

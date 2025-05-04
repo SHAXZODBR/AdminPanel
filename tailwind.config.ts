@@ -62,6 +62,20 @@ const config = {
           background: "#1e2732",
           foreground: "#ffffff",
           border: "#374151",
+          primary: {
+            DEFAULT: "hsl(var(--sidebar-primary))",
+            foreground: "hsl(var(--sidebar-primary-foreground))",
+          },
+          secondary: {
+            DEFAULT: "hsl(var(--sidebar-accent))",
+            foreground: "hsl(var(--sidebar-accent-foreground))",
+          },
+          muted: {
+            DEFAULT: "hsl(var(--sidebar-background))",
+            foreground: "hsl(var(--sidebar-foreground))",
+          },
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
         },
       },
       borderRadius: {
@@ -89,4 +103,3 @@ const config = {
 } satisfies Config
 
 export default config
-

@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DeleteDialog } from "@/components/delete-dialog"
 import Link from "next/link"
 import Image from "next/image"
-import { Pencil, Plus } from "lucide-react"
+import { AlertCircle, Pencil, Plus, Loader2 } from "lucide-react"
 import { useStore } from "@/lib/store"
+import { useToast } from "@/components/ui/use-toast"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function ManagersPage() {
   const { language, t } = useLanguage()
@@ -19,12 +21,130 @@ export default function ManagersPage() {
   const [nameFilter, setNameFilter] = useState("")
   const [positionFilter, setPositionFilter] = useState("")
   const [rowsPerPage, setRowsPerPage] = useState("10")
-  const [currentLeaders, setCurrentLeaders] = useState(leaders[language] || [])
+  const [currentLeaders, setCurrentLeaders] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isUsingMockData, setIsUsingMockData] = useState(false)
+  const { toast } = useToast()
+  const [selectedLanguage, setSelectedLanguage] = useState(language)
+  const [availableLanguages, setAvailableLanguages] = useState(["uz", "ru", "en", "uz-cyrl"])
+
+  // Ensure HTTPS is used for all API requests
+  const BASE_URL = "https://uzfk.uz"
+
+  // Fix the loadLeadership function to properly map fields
+  const loadLeadership = async (lang: string) => {
+    setIsLoading(true)
+    try {
+      // Make a direct fetch request to the API
+      const response = await fetch(`${BASE_URL}/${lang}/api/leadership/`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log(`API Response (Leadership - ${lang}):`, data)
+
+      // Get the results array from the response
+      const leadershipData = Array.isArray(data) ? data : data.results || []
+      setIsUsingMockData(false)
+
+      // Transform API data to match the expected format with better field mapping
+      const formattedLeadership = leadershipData.map((leader: any) => ({
+        id: leader.id?.toString() || Math.random().toString(36).substring(2, 9),
+        language: leader.language || lang,
+        fullName: leader.f_name || leader.full_name || leader.fullName || leader.title || "Leader " + (leader.id || ""),
+        position: leader.position_text || leader.position || leader.title || "Position",
+        phoneNumber: leader.phone || leader.phone_number || "+998 XX XXX XX XX",
+        email: leader.email || "email@example.com",
+        bio: leader.biography_text || leader.description || leader.bio || "No biography available",
+        photo: leader.image || leader.photo || "/placeholder.svg?height=100&width=100",
+      }))
+
+      setCurrentLeaders(formattedLeadership)
+    } catch (error) {
+      console.error(`Error loading leadership data for language ${lang}:`, error)
+      toast({
+        title: t("error"),
+        description: t("errorLoadingLeadership"),
+        variant: "destructive",
+      })
+
+      // Use mock data as fallback
+      setIsUsingMockData(true)
+      const mockLeadership = [
+        {
+          id: "1",
+          language: lang,
+          fullName: "John Doe",
+          position: "CEO",
+          phoneNumber: "+998 90 123 45 67",
+          email: "john.doe@example.com",
+          bio: "Experienced leader with over 15 years in the industry",
+          photo: "/placeholder.svg?height=100&width=100",
+        },
+        {
+          id: "2",
+          language: lang,
+          fullName: "Jane Smith",
+          position: "CTO",
+          phoneNumber: "+998 90 987 65 43",
+          email: "jane.smith@example.com",
+          bio: "Technical expert with a background in software development",
+          photo: "/placeholder.svg?height=100&width=100",
+        },
+      ]
+      setCurrentLeaders(mockLeadership)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    // Make sure we're using the latest leaders data
-    setCurrentLeaders(leaders[language] || [])
-  }, [language, leaders])
+    loadLeadership(selectedLanguage)
+  }, [selectedLanguage, toast, t])
+
+  const handleDeleteLeader = async (id: string) => {
+    try {
+      // Make a direct fetch request to delete the leader
+      const response = await fetch(`${BASE_URL}/${selectedLanguage}/api/leadership/${id}/`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          // Add auth token if available
+          ...(typeof window !== "undefined" && localStorage.getItem("authToken")
+            ? { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+            : {}),
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+
+      // Update the local state after deletion
+      setCurrentLeaders((prev) => prev.filter((leader) => leader.id !== id))
+
+      toast({
+        title: t("success"),
+        description: t("leaderDeleted"),
+      })
+    } catch (error) {
+      console.error("Error deleting leader:", error)
+      toast({
+        title: t("error"),
+        description: t("errorDeletingLeader"),
+        variant: "destructive",
+      })
+    }
+  }
 
   const filteredLeaders = currentLeaders.filter((leader) => {
     const matchesName = leader.fullName.toLowerCase().includes(nameFilter.toLowerCase())
@@ -47,9 +167,17 @@ export default function ManagersPage() {
       <div>
         <h2 className="mb-6 text-2xl font-bold">{t("managers")}</h2>
 
+        {isUsingMockData && (
+          <Alert variant="warning" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>{t("mockDataTitle")}</AlertTitle>
+            <AlertDescription>{t("mockDataDescription")}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-6 rounded-md border filter-section-dark p-4">
           <h3 className="mb-4 text-lg font-medium">{t("filters")}</h3>
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label htmlFor="name" className="mb-1 block text-sm font-medium">
                 {t("fullName")}
@@ -73,6 +201,23 @@ export default function ManagersPage() {
                 placeholder={t("position")}
                 className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
               />
+            </div>
+            <div>
+              <label htmlFor="language" className="mb-1 block text-sm font-medium">
+                {t("language")}
+              </label>
+              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <SelectTrigger className="bg-[#3f4b5b] border-[#374151] text-white">
+                  <SelectValue placeholder={t("selectLanguage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex gap-2">
@@ -114,39 +259,58 @@ export default function ManagersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLeaders.slice(0, Number.parseInt(rowsPerPage)).map((leader) => (
-                <TableRow key={leader.id} className="border-gray-200 dark:border-gray-700">
-                  <TableCell className="uppercase">{leader.language}</TableCell>
-                  <TableCell>
-                    <Image
-                      src={leader.photo || "/placeholder.svg?height=100&width=100"}
-                      alt={leader.fullName}
-                      width={60}
-                      height={60}
-                      className="rounded-full border"
-                    />
-                  </TableCell>
-                  <TableCell>{leader.fullName}</TableCell>
-                  <TableCell>{leader.position}</TableCell>
-                  <TableCell>{leader.phoneNumber}</TableCell>
-                  <TableCell>{leader.email}</TableCell>
-                  <TableCell className="max-w-xs truncate">{leader.bio}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" asChild className="hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <Link href={`/dashboard/managers/${leader.id}/edit`}>
-                          <Pencil className="h-4 w-4 text-amber-500" />
-                        </Link>
-                      </Button>
-                      <DeleteDialog itemName={leader.fullName} onDelete={() => deleteLeader(leader.id, language)} />
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      <span className="ml-2">{t("loading")}</span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
-              {filteredLeaders.length === 0 && (
+              ) : filteredLeaders.length > 0 ? (
+                filteredLeaders.slice(0, Number.parseInt(rowsPerPage)).map((leader) => (
+                  <TableRow key={leader.id} className="border-gray-200 dark:border-gray-700">
+                    <TableCell className="uppercase">{leader.language}</TableCell>
+                    <TableCell>
+                      <Image
+                        src={leader.photo || "/placeholder.svg?height=100&width=100"}
+                        alt={leader.fullName}
+                        width={60}
+                        height={60}
+                        className="rounded-full border"
+                      />
+                    </TableCell>
+                    <TableCell>{leader.fullName}</TableCell>
+                    <TableCell>{leader.position}</TableCell>
+                    <TableCell className="whitespace-nowrap">{leader.phoneNumber}</TableCell>
+                    <TableCell>{leader.email}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      <div className="tooltip" title={leader.bio}>
+                        {leader.bio}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <Link href={`/dashboard/managers/${leader.id}/edit`}>
+                            <Pencil className="h-4 w-4 text-amber-500" />
+                          </Link>
+                        </Button>
+                        <DeleteDialog itemName={leader.fullName} onDelete={() => handleDeleteLeader(leader.id)} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
-                    No managers found.
+                    {t("noManagersFound")}
                   </TableCell>
                 </TableRow>
               )}
@@ -173,4 +337,3 @@ export default function ManagersPage() {
     </DashboardLayout>
   )
 }
-

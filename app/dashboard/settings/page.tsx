@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/components/language-provider"
 import { useTheme } from "next-themes"
@@ -27,6 +27,13 @@ export default function SettingsPage() {
     twoFactorAuth: false,
     sessionTimeout: "30",
   })
+
+  useEffect(() => {
+    // Ensure we're using a supported language
+    if (language !== "uz-cyrl" && language !== "ru" && language !== "uz") {
+      setLanguage("ru") // Default to Russian if unsupported language
+    }
+  }, [language, setLanguage])
 
   const handleSaveSettings = async () => {
     setIsLoading(true)
@@ -277,4 +284,3 @@ export default function SettingsPage() {
     </DashboardLayout>
   )
 }
-

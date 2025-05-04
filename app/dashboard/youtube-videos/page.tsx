@@ -9,231 +9,78 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DeleteDialog } from "@/components/delete-dialog"
 import Link from "next/link"
-import { Pencil, Plus, Play } from "lucide-react"
+import { Pencil, Plus, ExternalLink, AlertCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
-
-// Define the YouTubeVideo type
-type YouTubeVideo = {
-  id: string
-  language: "en" | "ru" | "uz" | "uz-cyrl"
-  title: string
-  videoId: string
-  category: string
-  isActive: boolean
-  createdAt: string
-}
-
-// Mock API service for YouTube videos
-const youtubeVideoService = {
-  // Mock data
-  mockData: {
-    "uz-cyrl": [
-      {
-        id: "1",
-        language: "uz-cyrl",
-        title: "Ўзбекистон янгиликлари",
-        videoId: "dQw4w9WgXcQ",
-        category: "Янгиликлар",
-        isActive: true,
-        createdAt: "13.03.2025 11:00",
-      },
-      {
-        id: "2",
-        language: "uz-cyrl",
-        title: "Тошкент шаҳрида янги бинолар",
-        videoId: "dQw4w9WgXcQ",
-        category: "Шаҳарсозлик",
-        isActive: true,
-        createdAt: "12.03.2025 11:14",
-      },
-      {
-        id: "3",
-        language: "uz-cyrl",
-        title: "Ўзбекистон тарихи ҳақида",
-        videoId: "dQw4w9WgXcQ",
-        category: "Таълим",
-        isActive: false,
-        createdAt: "11.03.2025 18:09",
-      },
-    ],
-    ru: [
-      {
-        id: "1",
-        language: "ru",
-        title: "Новости Узбекистана",
-        videoId: "dQw4w9WgXcQ",
-        category: "Новости",
-        isActive: true,
-        createdAt: "13.03.2025 11:00",
-      },
-      {
-        id: "2",
-        language: "ru",
-        title: "Новые здания в городе Ташкент",
-        videoId: "dQw4w9WgXcQ",
-        category: "Градостроительство",
-        isActive: true,
-        createdAt: "12.03.2025 11:14",
-      },
-      {
-        id: "3",
-        language: "ru",
-        title: "Об истории Узбекистана",
-        videoId: "dQw4w9WgXcQ",
-        category: "Образование",
-        isActive: false,
-        createdAt: "11.03.2025 18:09",
-      },
-    ],
-    uz: [
-      {
-        id: "1",
-        language: "uz",
-        title: "O'zbekiston yangiliklari",
-        videoId: "dQw4w9WgXcQ",
-        category: "Yangiliklar",
-        isActive: true,
-        createdAt: "13.03.2025 11:00",
-      },
-      {
-        id: "2",
-        language: "uz",
-        title: "Toshkent shahrida yangi binolar",
-        videoId: "dQw4w9WgXcQ",
-        category: "Shaharsozlik",
-        isActive: true,
-        createdAt: "12.03.2025 11:14",
-      },
-      {
-        id: "3",
-        language: "uz",
-        title: "O'zbekiston tarixi haqida",
-        videoId: "dQw4w9WgXcQ",
-        category: "Ta'lim",
-        isActive: false,
-        createdAt: "11.03.2025 18:09",
-      },
-    ],
-  },
-
-  // Get all videos by language
-  getAll: async (language: string): Promise<YouTubeVideo[]> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return [...(youtubeVideoService.mockData[language] || [])]
-  },
-
-  // Get video by ID and language
-  getById: async (id: string, language: string): Promise<YouTubeVideo | null> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 200))
-    const item = youtubeVideoService.mockData[language]?.find((item) => item.id === id)
-    return item ? { ...item } : null
-  },
-
-  // Add new video
-  add: async (data: Omit<YouTubeVideo, "id" | "createdAt">): Promise<YouTubeVideo> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const newItem: YouTubeVideo = {
-      id: Date.now().toString(),
-      createdAt: new Date().toLocaleString("ru-RU"),
-      ...data,
-    }
-
-    if (!youtubeVideoService.mockData[data.language]) {
-      youtubeVideoService.mockData[data.language] = []
-    }
-
-    youtubeVideoService.mockData[data.language].push(newItem)
-    return { ...newItem }
-  },
-
-  // Update video
-  update: async (id: string, language: string, data: Partial<YouTubeVideo>): Promise<YouTubeVideo> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const videos = youtubeVideoService.mockData[language] || []
-    const index = videos.findIndex((item) => item.id === id)
-    if (index === -1) throw new Error("Video not found")
-
-    const updatedItem = {
-      ...videos[index],
-      ...data,
-    }
-
-    videos[index] = updatedItem
-    return { ...updatedItem }
-  },
-
-  // Delete video
-  delete: async (id: string, language: string): Promise<void> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 400))
-
-    const videos = youtubeVideoService.mockData[language] || []
-    const index = videos.findIndex((item) => item.id === id)
-    if (index !== -1) {
-      videos.splice(index, 1)
-    }
-  },
-}
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { apiService } from "@/lib/api-service"
 
 export default function YouTubeVideosPage() {
   const { t, language, setLanguage } = useLanguage()
   const { toast } = useToast()
 
-  const [videos, setVideos] = useState<YouTubeVideo[]>([])
-  const [titleFilter, setTitleFilter] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("")
+  const [platformFilter, setPlatformFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [rowsPerPage, setRowsPerPage] = useState("10")
-  const [isLoading, setIsLoading] = useState(true)
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<YouTubeVideo | null>(null)
+  const [editingItem, setEditingItem] = useState<any | null>(null)
   const [editFormData, setEditFormData] = useState({
     title: "",
-    videoId: "",
-    category: "",
-    isActive: true,
+    video_id: "",
+    is_active: true,
   })
 
-  // Load data when language changes
+  const [videos, setVideos] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch YouTube videos using the API
   useEffect(() => {
-    const loadData = async () => {
+    const fetchVideos = async () => {
       setIsLoading(true)
+      setError(null)
+
       try {
-        const data = await youtubeVideoService.getAll(language)
-        setVideos(data)
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load YouTube videos",
-          variant: "destructive",
-        })
+        // Use the API service to fetch YouTube videos
+        const data = await apiService.youtube.getAll(language)
+        console.log("API response received:", data)
+
+        const videosData = Array.isArray(data) ? data : data.results || []
+
+        // Transform API data to match the expected format
+        const formattedVideos = videosData.map((video: any) => ({
+          id: video.id.toString(),
+          title: video.title || "Unknown",
+          video_id: video.video_id || "",
+          is_active: video.is_active !== undefined ? video.is_active : true,
+          created_at: video.created_at || new Date().toISOString(),
+        }))
+
+        setVideos(formattedVideos)
+      } catch (err) {
+        console.error("Error fetching YouTube videos:", err)
+        setError("Failed to load YouTube videos. Please try again later.")
+        setVideos([])
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadData()
-  }, [language, toast])
+    fetchVideos()
+  }, [language])
 
+  // Filter videos based on search criteria
   const filteredVideos = videos.filter((video) => {
-    const matchesTitle = titleFilter === "" || video.title.toLowerCase().includes(titleFilter.toLowerCase())
-    const matchesCategory = categoryFilter === "" || video.category.toLowerCase().includes(categoryFilter.toLowerCase())
+    const matchesTitle = video.title?.toLowerCase().includes(platformFilter.toLowerCase()) || false
     const matchesStatus =
       statusFilter === "all" ||
       statusFilter === "" ||
-      (statusFilter === "active" && video.isActive) ||
-      (statusFilter === "inactive" && !video.isActive)
-    return matchesTitle && matchesCategory && matchesStatus
+      (statusFilter === "active" && video.is_active) ||
+      (statusFilter === "inactive" && !video.is_active)
+    return matchesTitle && matchesStatus
   })
 
   const handleApplyFilters = () => {
@@ -241,35 +88,37 @@ export default function YouTubeVideosPage() {
   }
 
   const handleClearFilters = () => {
-    setTitleFilter("")
-    setCategoryFilter("")
+    setPlatformFilter("")
     setStatusFilter("")
   }
 
   const handleDelete = async (id: string) => {
     try {
-      await youtubeVideoService.delete(id, language)
+      await apiService.youtube.delete(id, language)
+
+      // Update the videos list after deletion
       setVideos((prev) => prev.filter((video) => video.id !== id))
+
       toast({
-        title: "Success",
-        description: "YouTube video deleted successfully",
+        title: t("success"),
+        description: t("videoDeletedSuccessfully"),
       })
     } catch (error) {
+      console.error("Error deleting video:", error)
       toast({
-        title: "Error",
-        description: "Failed to delete YouTube video",
+        title: t("error"),
+        description: t("errorDeletingVideo"),
         variant: "destructive",
       })
     }
   }
 
-  const handleEdit = (video: YouTubeVideo) => {
-    setEditingItem(video)
+  const handleEdit = async (item: any) => {
+    setEditingItem(item)
     setEditFormData({
-      title: video.title,
-      videoId: video.videoId,
-      category: video.category,
-      isActive: video.isActive,
+      title: item.title,
+      video_id: item.video_id,
+      is_active: item.is_active,
     })
     setEditDialogOpen(true)
   }
@@ -278,25 +127,40 @@ export default function YouTubeVideosPage() {
     if (!editingItem) return
 
     try {
-      const updatedVideo = await youtubeVideoService.update(editingItem.id, language, {
-        title: editFormData.title,
-        videoId: editFormData.videoId,
-        category: editFormData.category,
-        isActive: editFormData.isActive,
-      })
+      await apiService.youtube.update(
+        editingItem.id,
+        {
+          title: editFormData.title,
+          video_id: editFormData.video_id,
+          is_active: editFormData.is_active,
+        },
+        language,
+      )
 
-      // Update the video in the state
-      setVideos((prev) => prev.map((video) => (video.id === editingItem.id ? updatedVideo : video)))
+      // Update the videos list after edit
+      setVideos((prev) =>
+        prev.map((video) =>
+          video.id === editingItem.id
+            ? {
+                ...video,
+                title: editFormData.title,
+                video_id: editFormData.video_id,
+                is_active: editFormData.is_active,
+              }
+            : video,
+        ),
+      )
 
       setEditDialogOpen(false)
       toast({
-        title: "Success",
-        description: "YouTube video updated successfully",
+        title: t("success"),
+        description: t("videoUpdatedSuccessfully"),
       })
     } catch (error) {
+      console.error("Error updating video:", error)
       toast({
-        title: "Error",
-        description: "Failed to update YouTube video",
+        title: t("error"),
+        description: t("errorUpdatingVideo"),
         variant: "destructive",
       })
     }
@@ -324,30 +188,25 @@ export default function YouTubeVideosPage() {
           </div>
         </div>
 
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-6 rounded-md border filter-section-dark p-4">
           <h3 className="mb-4 text-lg font-medium">{t("filters")}</h3>
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor="title" className="mb-1 block text-sm font-medium">
                 {t("title")}
               </label>
               <Input
                 id="title"
-                value={titleFilter}
-                onChange={(e) => setTitleFilter(e.target.value)}
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
                 placeholder={t("title")}
-                className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
-              />
-            </div>
-            <div>
-              <label htmlFor="category" className="mb-1 block text-sm font-medium">
-                {t("category")}
-              </label>
-              <Input
-                id="category"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                placeholder={t("category")}
                 className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
               />
             </div>
@@ -395,10 +254,9 @@ export default function YouTubeVideosPage() {
           <Table>
             <TableHeader className="table-header-dark">
               <TableRow>
-                <TableHead className="text-white">{t("language")}</TableHead>
                 <TableHead className="text-white">{t("title")}</TableHead>
+                <TableHead className="text-white">{t("videoId")}</TableHead>
                 <TableHead className="text-white">{t("preview")}</TableHead>
-                <TableHead className="text-white">{t("category")}</TableHead>
                 <TableHead className="text-white">{t("status")}</TableHead>
                 <TableHead className="text-white">{t("created")}</TableHead>
                 <TableHead className="text-white">{t("actions")}</TableHead>
@@ -407,47 +265,55 @@ export default function YouTubeVideosPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    Loading...
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      Loading...
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    {t("noVideosFound")}
                   </TableCell>
                 </TableRow>
               ) : filteredVideos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    No YouTube videos found.
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    {t("noVideosFound")}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredVideos.slice(0, Number.parseInt(rowsPerPage)).map((video) => (
                   <TableRow key={video.id} className="border-gray-200 dark:border-gray-700">
-                    <TableCell className="uppercase">{video.language}</TableCell>
                     <TableCell>{video.title}</TableCell>
+                    <TableCell>{video.video_id}</TableCell>
                     <TableCell>
                       <div className="relative h-16 w-28 overflow-hidden rounded border bg-gray-100 flex items-center justify-center group">
                         <img
-                          src={`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`}
+                          src={`https://img.youtube.com/vi/${video.video_id}/mqdefault.jpg`}
                           alt={video.title}
                           className="object-cover w-full h-full"
                         />
                         <a
-                          href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                          href={`https://www.youtube.com/watch?v=${video.video_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all"
                         >
-                          <Play className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <ExternalLink className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                         </a>
                       </div>
                     </TableCell>
-                    <TableCell>{video.category}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs ${video.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                        className={`px-2 py-1 rounded-full text-xs ${video.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
                       >
-                        {video.isActive ? t("active") : t("inactive")}
+                        {video.is_active ? t("active") : t("inactive")}
                       </span>
                     </TableCell>
-                    <TableCell>{video.createdAt}</TableCell>
+                    <TableCell>{new Date(video.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
@@ -505,20 +371,20 @@ export default function YouTubeVideosPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("youtubeVideoId")}</label>
               <Input
-                value={editFormData.videoId}
-                onChange={(e) => setEditFormData({ ...editFormData, videoId: e.target.value })}
+                value={editFormData.video_id}
+                onChange={(e) => setEditFormData({ ...editFormData, video_id: e.target.value })}
                 placeholder="dQw4w9WgXcQ"
                 required
               />
               <p className="text-xs text-gray-500">{t("youtubeVideoIdHelp")}</p>
             </div>
 
-            {editFormData.videoId && (
+            {editFormData.video_id && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t("preview")}</label>
                 <div className="relative h-32 w-56 overflow-hidden rounded border">
                   <img
-                    src={`https://img.youtube.com/vi/${editFormData.videoId}/mqdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${editFormData.video_id}/mqdefault.jpg`}
                     alt="Video preview"
                     className="object-cover w-full h-full"
                   />
@@ -526,20 +392,11 @@ export default function YouTubeVideosPage() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t("category")}</label>
-              <Input
-                value={editFormData.category}
-                onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                placeholder={t("category")}
-              />
-            </div>
-
             <div className="flex items-center space-x-2">
               <Switch
                 id="is-active-edit"
-                checked={editFormData.isActive}
-                onCheckedChange={(checked) => setEditFormData({ ...editFormData, isActive: checked })}
+                checked={editFormData.is_active}
+                onCheckedChange={(checked) => setEditFormData({ ...editFormData, is_active: checked })}
               />
               <label htmlFor="is-active-edit" className="text-sm font-medium">
                 {t("active")}
@@ -559,4 +416,3 @@ export default function YouTubeVideosPage() {
     </DashboardLayout>
   )
 }
-

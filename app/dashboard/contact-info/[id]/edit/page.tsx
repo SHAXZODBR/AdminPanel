@@ -12,112 +12,113 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { api } from "@/lib/api"
 
-// Mock data for contact info
-const mockContactInfo = {
-  "uz-cyrl": [
-    {
-      id: "1",
-      language: "uz-cyrl",
-      type: "reception",
-      value: "+998 71 123 45 67",
-      description: "Қабулхона телефон рақами",
-      createdAt: "13.03.2025 11:00",
-    },
-    {
-      id: "2",
-      language: "uz-cyrl",
-      type: "trustPhone",
-      value: "+998 71 987 65 43",
-      description: "Ишонч телефони",
-      createdAt: "12.03.2025 11:14",
-    },
-    {
-      id: "3",
-      language: "uz-cyrl",
-      type: "email",
-      value: "info@example.uz",
-      description: "Расмий электрон почта",
-      createdAt: "11.03.2025 18:09",
-    },
-    {
-      id: "4",
-      language: "uz-cyrl",
-      type: "address",
-      value: "Тошкент шаҳри, Шайхонтоҳур тумани, Навоий кўчаси, 30-уй",
-      description: "Бош офис манзили",
-      createdAt: "10.03.2025 14:30",
-    },
-  ],
-  ru: [
-    {
-      id: "1",
-      language: "ru",
-      type: "reception",
-      value: "+998 71 123 45 67",
-      description: "Телефон приемной",
-      createdAt: "13.03.2025 11:00",
-    },
-    {
-      id: "2",
-      language: "ru",
-      type: "trustPhone",
-      value: "+998 71 987 65 43",
-      description: "Телефон доверия",
-      createdAt: "12.03.2025 11:14",
-    },
-    {
-      id: "3",
-      language: "ru",
-      type: "email",
-      value: "info@example.uz",
-      description: "Официальная электронная почта",
-      createdAt: "11.03.2025 18:09",
-    },
-    {
-      id: "4",
-      language: "ru",
-      type: "address",
-      value: "г. Ташкент, Шайхантаурский район, ул. Навои, дом 30",
-      description: "Адрес главного офиса",
-      createdAt: "10.03.2025 14:30",
-    },
-  ],
-  uz: [
-    {
-      id: "1",
-      language: "uz",
-      type: "reception",
-      value: "+998 71 123 45 67",
-      description: "Qabulxona telefon raqami",
-      createdAt: "13.03.2025 11:00",
-    },
-    {
-      id: "2",
-      language: "uz",
-      type: "trustPhone",
-      value: "+998 71 987 65 43",
-      description: "Ishonch telefoni",
-      createdAt: "12.03.2025 11:14",
-    },
-    {
-      id: "3",
-      language: "uz",
-      type: "email",
-      value: "info@example.uz",
-      description: "Rasmiy elektron pochta",
-      createdAt: "11.03.2025 18:09",
-    },
-    {
-      id: "4",
-      language: "uz",
-      type: "address",
-      value: "Toshkent shahri, Shayxontohur tumani, Navoiy ko'chasi, 30-uy",
-      description: "Bosh ofis manzili",
-      createdAt: "10.03.2025 14:30",
-    },
-  ],
-}
+// Remove this entire mock data
+// const mockContactInfo = {
+//   "uz-cyrl": [
+//     {
+//       id: "1",
+//       language: "uz-cyrl",
+//       type: "reception",
+//       value: "+998 71 123 45 67",
+//       description: "Қабулхона телефон рақами",
+//       createdAt: "13.03.2025 11:00",
+//     },
+//     {
+//       id: "2",
+//       language: "uz-cyrl",
+//       type: "trustPhone",
+//       value: "+998 71 987 65 43",
+//       description: "Ишонч телефони",
+//       createdAt: "12.03.2025 11:14",
+//     },
+//     {
+//       id: "3",
+//       language: "uz-cyrl",
+//       type: "email",
+//       value: "info@example.uz",
+//       description: "Расмий электрон почта",
+//       createdAt: "11.03.2025 18:09",
+//     },
+//     {
+//       id: "4",
+//       language: "uz-cyrl",
+//       type: "address",
+//       value: "Тошкент шаҳри, Шайхонтоҳур тумани, Навоий кўчаси, 30-уй",
+//       description: "Бош офис манзили",
+//       createdAt: "10.03.2025 14:30",
+//     },
+//   ],
+//   ru: [
+//     {
+//       id: "1",
+//       language: "ru",
+//       type: "reception",
+//       value: "+998 71 123 45 67",
+//       description: "Телефон приемной",
+//       createdAt: "13.03.2025 11:00",
+//     },
+//     {
+//       id: "2",
+//       language: "ru",
+//       type: "trustPhone",
+//       value: "+998 71 987 65 43",
+//       description: "Телефон доверия",
+//       createdAt: "12.03.2025 11:14",
+//     },
+//     {
+//       id: "3",
+//       language: "ru",
+//       type: "email",
+//       value: "info@example.uz",
+//       description: "Официальная электронная почта",
+//       createdAt: "11.03.2025 18:09",
+//     },
+//     {
+//       id: "4",
+//       language: "ru",
+//       type: "address",
+//       value: "г. Ташкент, Шайхантаурский район, ул. Навои, дом 30",
+//       description: "Адрес главного офиса",
+//       createdAt: "10.03.2025 14:30",
+//     },
+//   ],
+//   uz: [
+//     {
+//       id: "1",
+//       language: "uz",
+//       type: "reception",
+//       value: "+998 71 123 45 67",
+//       description: "Qabulxona telefon raqami",
+//       createdAt: "13.03.2025 11:00",
+//     },
+//     {
+//       id: "2",
+//       language: "uz",
+//       type: "trustPhone",
+//       value: "+998 71 987 65 43",
+//       description: "Ishonch telefoni",
+//       createdAt: "12.03.2025 11:14",
+//     },
+//     {
+//       id: "3",
+//       language: "uz",
+//       type: "email",
+//       value: "info@example.uz",
+//       description: "Rasmiy elektron pochta",
+//       createdAt: "11.03.2025 18:09",
+//     },
+//     {
+//       id: "4",
+//       language: "uz",
+//       type: "address",
+//       value: "Toshkent shahri, Shayxontohur tumani, Navoiy ko'chasi, 30-uy",
+//       description: "Bosh ofis manzili",
+//       createdAt: "10.03.2025 14:30",
+//     },
+//   ],
+// }
 
 export default function EditContactInfoPage() {
   const { t, language, setLanguage } = useLanguage()
@@ -132,41 +133,49 @@ export default function EditContactInfoPage() {
     description: "",
   })
 
+  // Replace the useEffect that uses mock data with one that uses the API client
   useEffect(() => {
     const infoId = params.id as string
 
-    // Find the contact info in all language collections
-    let foundInfo = null
-    let foundLanguage = ""
+    const fetchContactInfo = async () => {
+      try {
+        // Use the API client to fetch the contact info by ID
+        const response = await api.contact.getById(infoId, language)
 
-    for (const lang of Object.keys(mockContactInfo)) {
-      const info = mockContactInfo[lang].find((i) => i.id === infoId)
-      if (info) {
-        foundInfo = info
-        foundLanguage = lang
-        break
+        if (response) {
+          const info = response
+          setFormData({
+            language: info.language || language,
+            type: info.type || "reception",
+            value: info.value || info.contact_info || "",
+            description: info.description || "",
+          })
+
+          // Set the language in the language provider to match the item's language
+          if (info.language) {
+            setLanguage(info.language as "uz-cyrl" | "ru" | "uz")
+          }
+        } else {
+          toast({
+            title: t("error"),
+            description: t("contactInfoNotFound"),
+            variant: "destructive",
+          })
+          router.push("/dashboard/contact-info")
+        }
+      } catch (error) {
+        console.error(`Error fetching contact info ${infoId}:`, error)
+        toast({
+          title: t("error"),
+          description: t("errorLoadingContactInfo"),
+          variant: "destructive",
+        })
+        router.push("/dashboard/contact-info")
       }
     }
 
-    if (foundInfo) {
-      setFormData({
-        language: foundInfo.language,
-        type: foundInfo.type,
-        value: foundInfo.value,
-        description: foundInfo.description || "",
-      })
-
-      // Set the language in the language provider to match the item's language
-      setLanguage(foundInfo.language as "uz-cyrl" | "ru" | "uz")
-    } else {
-      toast({
-        title: "Error",
-        description: "Contact information not found",
-        variant: "destructive",
-      })
-      router.push("/dashboard/contact-info")
-    }
-  }, [params.id, router, toast, setLanguage])
+    fetchContactInfo()
+  }, [params.id, router, toast, setLanguage, language, t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -305,4 +314,3 @@ export default function EditContactInfoPage() {
     </DashboardLayout>
   )
 }
-

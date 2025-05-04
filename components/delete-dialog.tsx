@@ -68,4 +68,3 @@ export function DeleteDialog({ itemName, onDelete }: DeleteDialogProps) {
     </Dialog>
   )
 }
-

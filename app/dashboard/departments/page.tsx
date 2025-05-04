@@ -11,6 +11,10 @@ import { DeleteDialog } from "@/components/delete-dialog"
 import Link from "next/link"
 import { Pencil, Plus } from "lucide-react"
 import { useStore } from "@/lib/store"
+import { useToast } from "@/components/ui/use-toast"
+import { apiService } from "@/lib/api-service"
+// Replace environment variable with hardcoded URL
+const BASE_URL = "https://uzfk.uz"
 
 export default function DepartmentsPage() {
   const { language, t } = useLanguage()
@@ -19,11 +23,63 @@ export default function DepartmentsPage() {
   const [typeFilter, setTypeFilter] = useState("")
   const [rowsPerPage, setRowsPerPage] = useState("10")
   const [currentDepartments, setCurrentDepartments] = useState(departments[language] || [])
+  const { toast } = useToast()
+
+  // Update the loadDepartments function to properly fetch data from the API
+  const loadDepartments = async () => {
+    try {
+      // Use the API service to fetch departments
+      const data = await apiService.sectorAndDepartment.getAll(language)
+      console.log("API response received:", data)
+
+      const departmentsData = Array.isArray(data) ? data : data.results || []
+
+      // Transform API data to match the expected format
+      const formattedDepartments = departmentsData.map((dept: any) => ({
+        id: dept.id?.toString() || Math.random().toString(36).substring(2, 9),
+        language: dept.language || language,
+        name: dept.name || "Unknown",
+        type: dept.type || "department",
+        head: dept.head || "Unknown",
+        phoneNumber: dept.phone_number || "Unknown",
+        email: dept.email || "Unknown",
+      }))
+
+      setCurrentDepartments(formattedDepartments)
+    } catch (error) {
+      console.error("Error loading departments data:", error)
+      toast({
+        title: t("error"),
+        description: t("errorLoadingDepartments"),
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteDepartment = async (id: string) => {
+    try {
+      await apiService.sectorAndDepartment.delete(id, language)
+
+      // Update the UI immediately by removing the deleted department
+      setCurrentDepartments((prev) => prev.filter((dept) => dept.id !== id))
+
+      toast({
+        title: t("success"),
+        description: t("departmentDeletedSuccessfully"),
+      })
+    } catch (error) {
+      console.error("Error deleting department:", error)
+      toast({
+        title: t("error"),
+        description: t("errorDeletingDepartment"),
+        variant: "destructive",
+      })
+    }
+  }
 
   useEffect(() => {
-    // Make sure we're using the latest departments data
-    setCurrentDepartments(departments[language] || [])
-  }, [language, departments])
+    loadDepartments()
+  }, [language, toast, t])
 
   const filteredDepartments = currentDepartments.filter((department) => {
     const matchesName = department.name.toLowerCase().includes(nameFilter.toLowerCase())
@@ -129,10 +185,7 @@ export default function DepartmentsPage() {
                           <Pencil className="h-4 w-4 text-amber-500" />
                         </Link>
                       </Button>
-                      <DeleteDialog
-                        itemName={department.name}
-                        onDelete={() => deleteDepartment(department.id, language)}
-                      />
+                      <DeleteDialog itemName={department.name} onDelete={() => handleDeleteDepartment(department.id)} />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -167,4 +220,3 @@ export default function DepartmentsPage() {
     </DashboardLayout>
   )
 }
-

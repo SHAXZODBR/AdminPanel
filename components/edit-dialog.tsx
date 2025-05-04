@@ -107,4 +107,3 @@ export function EditDialog({ title, fields, onSave }: EditDialogProps) {
     </Dialog>
   )
 }
-

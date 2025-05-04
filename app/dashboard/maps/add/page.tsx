@@ -5,12 +5,11 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ImageUpload } from "@/components/image-upload"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { api } from "@/lib/api"
+import { toast } from "@/components/ui/use-toast"
 
 export default function AddMapPage() {
   const { t } = useLanguage()
@@ -25,21 +24,42 @@ export default function AddMapPage() {
     setImages(files)
   }
 
+  // Update the handleSubmit function to use the mock maps service
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Here you would typically upload the images and save the map data
-    // This is a placeholder for the actual implementation
+    try {
+      // First upload images if any
+      let imageUrl = "/placeholder.svg?height=300&width=500"
 
-    console.log({
-      title,
-      description,
-      language,
-      images,
-    })
+      if (images.length > 0) {
+        const uploadResponse = await api.maps.uploadImage(images[0])
+        imageUrl = uploadResponse.url
+      }
 
-    // Redirect back to the maps list after saving
-    router.push("/dashboard/maps")
+      // Create the map using the mock service
+      await api.maps.create({
+        language: language as "en" | "ru" | "uz" | "uz-cyrl",
+        title,
+        description,
+        imageUrl,
+      })
+
+      toast({
+        title: t("success"),
+        description: t("mapAddedSuccessfully"),
+      })
+
+      // Redirect back to the maps list after saving
+      router.push("/dashboard/maps")
+    } catch (error) {
+      console.error("Error adding map:", error)
+      toast({
+        title: t("error"),
+        description: t("errorAddingMap"),
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -83,38 +103,7 @@ export default function AddMapPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>{t("selectLanguage")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("selectLanguage")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="uz_latn">O'zbekcha (Lotin)</SelectItem>
-                <SelectItem value="uz_cyrl">Ўзбекча (Кирилл)</SelectItem>
-                <SelectItem value="ru">Русский</SelectItem>
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>{t("uploadImages")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ImageUpload onImagesSelected={handleImagesSelected} multiple={true} />
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/maps")}>
-            {t("cancel")}
-          </Button>
-          <Button type="submit">{t("save")}</Button>
-        </div>
-      </form>
-    </div>
-  )
-}
-
+\
+\
+\
+\

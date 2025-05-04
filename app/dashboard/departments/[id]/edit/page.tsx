@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useStore } from "@/lib/store"
 
 export default function EditDepartmentPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
   const params = useParams()
   const { toast } = useToast()
@@ -30,42 +30,57 @@ export default function EditDepartmentPage() {
     email: "",
   })
 
+  // Update the useEffect to properly fetch department data from the API
   useEffect(() => {
     const departmentId = params.id as string
+    const fetchDepartment = async () => {
+      try {
+        setIsLoading(true)
+        const apiLanguage = language === "ru" ? "uz" : language
+        const apiUrl = `https://uzfk.uz/${apiLanguage}/api/sector-and-department/${departmentId}/`
 
-    // Find the department in all language collections
-    let foundDepartment = null
-    let foundLanguage = ""
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            ...(typeof window !== "undefined" && localStorage.getItem("authToken")
+              ? { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+              : {}),
+          },
+        })
 
-    for (const lang of ["en", "ru", "uz"]) {
-      const department = departments[lang]?.find((d) => d.id === departmentId)
-      if (department) {
-        foundDepartment = department
-        foundLanguage = lang
-        break
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`)
+        }
+
+        const departmentData = await response.json()
+
+        setFormData({
+          language: departmentData.language || language,
+          name: departmentData.name || "",
+          type: departmentData.type || "department",
+          head: departmentData.head || "",
+          phoneNumber: departmentData.phone_number || "",
+          email: departmentData.email || "",
+        })
+      } catch (error) {
+        console.error("Error fetching department:", error)
+        toast({
+          title: "Error",
+          description: "Department not found",
+          variant: "destructive",
+        })
+        router.push("/dashboard/departments")
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    if (foundDepartment) {
-      setFormData({
-        language: foundDepartment.language,
-        name: foundDepartment.name,
-        type: foundDepartment.type,
-        head: foundDepartment.head,
-        phoneNumber: foundDepartment.phoneNumber,
-        email: foundDepartment.email,
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "Department not found",
-        variant: "destructive",
-      })
-      router.push("/dashboard/departments")
-    }
-  }, [params.id, departments, router, toast])
+    fetchDepartment()
+  }, [params.id, router, toast, language])
 
-  // Update the handleSubmit function to ensure proper language handling
+  // Update the handleSubmit function to properly update department data via the API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -83,15 +98,33 @@ export default function EditDepartmentPage() {
     const departmentId = params.id as string
 
     try {
-      // Update department in store with the specific language
-      updateDepartment(departmentId, formData.language as "en" | "ru" | "uz", {
+      const apiLanguage = formData.language === "ru" ? "uz" : formData.language
+      const apiUrl = `https://uzfk.uz/${apiLanguage}/api/sector-and-department/${departmentId}/`
+
+      const departmentData = {
         name: formData.name,
-        type: formData.type as "department" | "sector",
+        type: formData.type,
         head: formData.head,
-        phoneNumber: formData.phoneNumber,
+        phone_number: formData.phoneNumber,
         email: formData.email,
-        language: formData.language as "en" | "ru" | "uz", // Ensure language is updated
+        language: formData.language,
+      }
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(typeof window !== "undefined" && localStorage.getItem("authToken")
+            ? { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+            : {}),
+        },
+        body: JSON.stringify(departmentData),
       })
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
 
       toast({
         title: "Success",
@@ -101,6 +134,7 @@ export default function EditDepartmentPage() {
       // Navigate back to the departments page
       router.push("/dashboard/departments")
     } catch (error) {
+      console.error("Error updating department:", error)
       toast({
         title: "Error",
         description: "Failed to update department",
@@ -205,4 +239,3 @@ export default function EditDepartmentPage() {
     </DashboardLayout>
   )
 }
-

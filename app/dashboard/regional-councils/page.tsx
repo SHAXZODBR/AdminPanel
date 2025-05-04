@@ -11,6 +11,9 @@ import { DeleteDialog } from "@/components/delete-dialog"
 import Link from "next/link"
 import { Pencil, Plus } from "lucide-react"
 import { useStore } from "@/lib/store"
+import { useToast } from "@/components/ui/use-toast"
+import { apiService } from "@/lib/api-service"
+const BASE_URL = "https://uzfk.uz"
 
 export default function RegionalCouncilsPage() {
   const { language, t } = useLanguage()
@@ -19,11 +22,64 @@ export default function RegionalCouncilsPage() {
   const [regionFilter, setRegionFilter] = useState("")
   const [rowsPerPage, setRowsPerPage] = useState("10")
   const [currentCouncils, setCurrentCouncils] = useState(regionalCouncils[language] || [])
+  const { toast } = useToast()
 
   useEffect(() => {
-    // Make sure we're using the latest councils data
-    setCurrentCouncils(regionalCouncils[language] || [])
-  }, [language, regionalCouncils])
+    // Update the loadCouncils function
+    const loadCouncils = async () => {
+      try {
+        // Use the API service to fetch councils
+        const data = await apiService.localCouncil.getAll(language)
+        console.log("API response received:", data)
+
+        const councilsData = Array.isArray(data) ? data : data.results || []
+
+        // Transform API data to match the expected format
+        const formattedCouncils = councilsData.map((council: any) => ({
+          id: council.id?.toString() || Math.random().toString(36).substring(2, 9),
+          language: council.language || language,
+          name: council.name || "Unknown",
+          region: council.region || "Unknown",
+          head: council.head || "Unknown",
+          phoneNumber: council.phone_number || "Unknown",
+          email: council.email || "Unknown",
+          address: council.address || "Unknown",
+        }))
+
+        setCurrentCouncils(formattedCouncils)
+      } catch (error) {
+        console.error("Error loading councils data:", error)
+        toast({
+          title: t("error"),
+          description: t("errorLoadingCouncils"),
+          variant: "destructive",
+        })
+      }
+    }
+
+    loadCouncils()
+  }, [language, toast, t])
+
+  const handleDeleteCouncil = async (id: string) => {
+    try {
+      await apiService.localCouncil.delete(id, language)
+
+      // Update the councils list after deletion
+      setCurrentCouncils((prev) => prev.filter((council) => council.id !== id))
+
+      toast({
+        title: t("success"),
+        description: t("councilDeletedSuccessfully"),
+      })
+    } catch (error) {
+      console.error("Error deleting council:", error)
+      toast({
+        title: t("error"),
+        description: t("errorDeletingCouncil"),
+        variant: "destructive",
+      })
+    }
+  }
 
   const filteredCouncils = currentCouncils.filter((council) => {
     const matchesName = council.name.toLowerCase().includes(nameFilter.toLowerCase())
@@ -128,10 +184,7 @@ export default function RegionalCouncilsPage() {
                           <Pencil className="h-4 w-4 text-amber-500" />
                         </Link>
                       </Button>
-                      <DeleteDialog
-                        itemName={council.name}
-                        onDelete={() => deleteRegionalCouncil(council.id, language)}
-                      />
+                      <DeleteDialog itemName={council.name} onDelete={() => handleDeleteCouncil(council.id)} />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -166,4 +219,3 @@ export default function RegionalCouncilsPage() {
     </DashboardLayout>
   )
 }
-

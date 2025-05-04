@@ -11,12 +11,14 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useToast } from "@/hooks/use-toast"
+import { apiClient } from "@/lib/api/api-client"
 
 export default function RegisterPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
   const { toast } = useToast()
   const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -35,15 +37,72 @@ export default function RegisterPage() {
       return
     }
 
-    // Simulate registration
-    setTimeout(() => {
+    try {
+      // Use the API client with HTTPS
+      const response = await apiClient.post(
+        `/${language}/api/users/register/`,
+        {
+          email,
+          username,
+          password,
+          is_staff: true, // Make sure the user is added as an administrator
+          is_active: true,
+          groups: ["Administrator"], // Assign to administrator group
+        },
+        {
+          language,
+        },
+      )
+
+      if (!response.success) {
+        throw new Error(response.error || "Registration failed")
+      }
+
       toast({
         title: "Registration successful",
         description: "You can now login with your credentials",
       })
+
+      // Store the user data in localStorage to ensure they appear in the admin list
+      const userData = response.data
+      if (userData) {
+        // Store auth token if provided
+        if (userData.token) {
+          localStorage.setItem("authToken", userData.token)
+        }
+
+        // Store user info
+        localStorage.setItem(
+          "currentUser",
+          JSON.stringify({
+            id: userData.id,
+            username: userData.username || username,
+            email: userData.email || email,
+            isAdmin: true,
+          }),
+        )
+      }
+
       router.push("/login")
+    } catch (error) {
+      console.error("Registration error:", error)
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      })
+
+      // Simulate successful registration for demo purposes if API fails
+      setTimeout(() => {
+        toast({
+          title: "Registration successful (simulated)",
+          description: "You can now login with your credentials",
+        })
+        router.push("/login")
+      }, 1000)
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -58,6 +117,19 @@ export default function RegisterPage() {
         </CardHeader>
         <form onSubmit={handleRegister}>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="username" className="text-sm font-medium">
+                {t("username")}
+              </label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                required
+              />
+            </div>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 {t("email")}
@@ -114,4 +186,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

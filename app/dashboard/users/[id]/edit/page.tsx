@@ -1,8 +1,9 @@
+// Create the edit page for users
 "use client"
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/components/language-provider"
@@ -12,224 +13,279 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useStore } from "@/lib/store"
+import { Loader2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function EditUserPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
   const params = useParams()
   const { toast } = useToast()
   const { users, updateUser } = useStore()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: "",
-    login: "",
+    email: "",
     roles: {
       admin: false,
       journalist: false,
     },
-    newPassword: "",
-    confirmPassword: "",
   })
-  const [showPassword, setShowPassword] = useState(false)
+  const [localFormData, setLocalFormData] = useState({
+    name: "",
+    email: "",
+    roles: {
+      admin: false,
+      journalist: false,
+    },
+  })
+  const userId = params.id as string
 
-  useEffect(() => {
-    const userId = params.id as string
-    const user = users.find((u) => u.id === userId)
+  // Load user data
+  const loadUser = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const apiLanguage = language === "ru" ? "uz" : language
+      const apiUrl = `https://uzfk.uz/${apiLanguage}/api/users/${userId}/`
 
-    if (user) {
-      setFormData({
-        name: user.login, // Using login as name since we don't have a name field in the mock data
-        login: user.login,
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...(typeof window !== "undefined" && localStorage.getItem("authToken")
+            ? { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+            : {}),
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+
+      const userData = await response.json()
+
+      setLocalFormData({
+        name: userData.username || userData.login || "",
+        email: userData.email || "",
         roles: {
-          admin: user.login === "administrator", // Just for demo purposes
+          admin: userData.role === "Administrator" || userData.groups?.some((g: any) => g.name === "Administrator"),
+          journalist: userData.role === "journalist" || userData.groups?.some((g: any) => g.name === "journalist"),
+        },
+      })
+      setFormData({
+        name: userData.username || userData.login || "",
+        email: userData.email || "",
+        roles: {
+          admin: userData.role === "Administrator" || userData.groups?.some((g: any) => g.name === "Administrator"),
+          journalist: userData.role === "journalist" || userData.groups?.some((g: any) => g.name === "journalist"),
+        },
+      })
+    } catch (error) {
+      console.error("Error fetching user:", error)
+      setError("Failed to load user data. Using fallback data.")
+
+      // Set fallback data in case of error
+      const fallbackData = {
+        name: "User " + userId,
+        email: "user@example.com",
+        roles: {
+          admin: false,
           journalist: false,
         },
-        newPassword: "",
-        confirmPassword: "",
-      })
-    } else {
-      router.push("/dashboard/users")
+      }
+
+      setLocalFormData(fallbackData)
+      setFormData(fallbackData)
+    } finally {
+      setIsLoading(false)
     }
-  }, [params.id, users, router])
+  }, [userId, language, toast])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  useEffect(() => {
+    loadUser()
+  }, [loadUser])
 
-    const userId = params.id as string
-
-    // Update user in store
-    updateUser(userId, { login: formData.name })
-
-    toast({
-      title: "Success",
-      description: "User has been updated successfully",
-    })
-
-    setIsLoading(false)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalFormData({ ...localFormData, [e.target.name]: e.target.value })
   }
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.newPassword) return
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalFormData({
+      ...localFormData,
+      roles: { ...localFormData.roles, [e.target.name]: e.target.checked },
+    })
+  }
 
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      })
-      return
-    }
-
+  const handleSave = async () => {
     setIsLoading(true)
 
-    // In a real app, you would update the password in the database
-    // For this demo, we'll just show a success message
+    try {
+      const apiLanguage = language === "ru" ? "uz" : language
+      const apiUrl = `https://uzfk.uz/${apiLanguage}/api/users/${userId}/`
 
-    toast({
-      title: "Success",
-      description: "Password has been changed successfully",
-    })
+      const userData = {
+        username: localFormData.name,
+        email: localFormData.email,
+        groups: [
+          ...(localFormData.roles.admin ? ["Administrator"] : []),
+          ...(localFormData.roles.journalist ? ["journalist"] : []),
+        ],
+      }
 
-    setIsLoading(false)
-    setFormData((prev) => ({ ...prev, newPassword: "", confirmPassword: "" }))
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(typeof window !== "undefined" && localStorage.getItem("authToken")
+            ? { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+            : {}),
+        },
+        body: JSON.stringify(userData),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+
+      setFormData(localFormData)
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      })
+      router.push("/dashboard/users")
+    } catch (error) {
+      console.error("Error updating user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update user",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleBackClick = () => {
+    router.push("/dashboard/users")
   }
 
   return (
     <DashboardLayout>
       <div className="p-6">
         <h2 className="mb-6 text-2xl font-bold">{t("editUser")}</h2>
-        <div className="grid gap-6 md:grid-cols-2">
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid gap-6 md:grid-cols-1">
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <CardTitle>{t("edit")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("name")}</label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder={t("name")}
-                    className="dark:bg-gray-700 dark:border-gray-600"
-                  />
+              {isLoading ? (
+                <div className="flex justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="admin"
-                      checked={formData.roles.admin}
-                      onCheckedChange={(checked) =>
-                        setFormData({
-                          ...formData,
-                          roles: { ...formData.roles, admin: checked as boolean },
-                        })
-                      }
-                    />
-                    <label htmlFor="admin" className="text-sm">
-                      Администрация
+              ) : (
+                <form className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      {t("name")}
                     </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="journalist"
-                      checked={formData.roles.journalist}
-                      onCheckedChange={(checked) =>
-                        setFormData({
-                          ...formData,
-                          roles: { ...formData.roles, journalist: checked as boolean },
-                        })
-                      }
-                    />
-                    <label htmlFor="journalist" className="text-sm">
-                      Мухбир
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button type="submit" className="bg-[#e91e63]" disabled={isLoading}>
-                    {isLoading ? t("saving") : t("save")}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle>{t("changePassword")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("newPassword")}</label>
-                  <div className="relative">
                     <Input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.newPassword}
-                      onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                      placeholder={t("newPassword")}
-                      className="dark:bg-gray-700 dark:border-gray-600 pr-10"
+                      id="name"
+                      name="name"
+                      value={localFormData.name}
+                      onChange={handleInputChange}
+                      placeholder={t("name")}
+                      className="dark:bg-gray-700 dark:border-gray-600"
+                      disabled={isLoading}
                     />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5 text-gray-500"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                          <path
-                            fillRule="evenodd"
-                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5 text-gray-500"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
-                            clipRule="evenodd"
-                          />
-                          <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                        </svg>
-                      )}
-                    </button>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("confirmPassword")}</label>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    placeholder={t("confirmPassword")}
-                    className="dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button type="submit" className="bg-[#e91e63]" disabled={isLoading}>
-                    {t("changePassword")}
-                  </Button>
-                </div>
-              </form>
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium">
+                      {t("email")}
+                    </label>
+                    <Input
+                      id="email"
+                      name="email"
+                      value={localFormData.email}
+                      onChange={handleInputChange}
+                      placeholder={t("email")}
+                      className="dark:bg-gray-700 dark:border-gray-600"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t("roles")}</label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="admin"
+                          name="admin"
+                          checked={localFormData.roles.admin}
+                          onCheckedChange={(checked) =>
+                            setLocalFormData({
+                              ...localFormData,
+                              roles: { ...localFormData.roles, admin: checked as boolean },
+                            })
+                          }
+                          disabled={isLoading}
+                        />
+                        <label htmlFor="admin" className="text-sm">
+                          Администрация
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="journalist"
+                          name="journalist"
+                          checked={localFormData.roles.journalist}
+                          onCheckedChange={(checked) =>
+                            setLocalFormData({
+                              ...localFormData,
+                              roles: { ...localFormData.roles, journalist: checked as boolean },
+                            })
+                          }
+                          disabled={isLoading}
+                        />
+                        <label htmlFor="journalist" className="text-sm">
+                          Журналист
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mr-2"
+                      onClick={handleBackClick}
+                      disabled={isLoading}
+                    >
+                      {t("cancel")}
+                    </Button>
+                    <Button onClick={handleSave} disabled={isLoading}>
+                      {isLoading ? (
+                        <div className="flex items-center">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("saving")}
+                        </div>
+                      ) : (
+                        t("save")
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -237,4 +293,3 @@ export default function EditUserPage() {
     </DashboardLayout>
   )
 }
-

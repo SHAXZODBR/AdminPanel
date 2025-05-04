@@ -1,224 +1,283 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Pencil, Save, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Image from "next/image"
-import { Pencil, Upload } from "lucide-react"
+import { UzbekistanMap } from "@/components/uzbekistan-map"
+
+// Define region data structure
+interface RegionData {
+  id: string
+  name: string
+  chairmanName: string
+  language: string
+}
+
+// Hardcoded regions for Uzbekistan
+const REGIONS = [
+  "tashkent",
+  "tashkent_city",
+  "andijan",
+  "bukhara",
+  "fergana",
+  "jizzakh",
+  "karakalpakstan",
+  "kashkadarya",
+  "khorezm",
+  "namangan",
+  "navoi",
+  "samarkand",
+  "surkhandarya",
+  "syrdarya",
+]
 
 export default function MapsPage() {
-  const { t, language, setLanguage } = useLanguage()
+  const { t, language } = useLanguage()
   const { toast } = useToast()
+  const [regionsData, setRegionsData] = useState<RegionData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [editingRegion, setEditingRegion] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState("")
+  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null)
 
-  // Mock data for maps by language
-  const mockMapsByLanguage = {
-    "uz-cyrl": [
-      {
-        id: "1",
-        name: "Ўзбекистон маъмурий харитаси",
-        description: "Ўзбекистоннинг маъмурий бўлиниши",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "13.03.2025 11:00",
-      },
-      {
-        id: "2",
-        name: "Тошкент шаҳар харитаси",
-        description: "Тошкент шаҳар туманларининг батафсил харитаси",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "12.03.2025 11:14",
-      },
-      {
-        id: "3",
-        name: "Ҳудудий Кенгашлар харитаси",
-        description: "Барча ҳудудий кенгашларни кўрсатувчи харита",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "11.03.2025 18:09",
-      },
-    ],
-    ru: [
-      {
-        id: "1",
-        name: "Административная карта Узбекистана",
-        description: "Административное деление Узбекистана",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "13.03.2025 11:00",
-      },
-      {
-        id: "2",
-        name: "Карта города Ташкент",
-        description: "Подробная карта районов города Ташкент",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "12.03.2025 11:14",
-      },
-      {
-        id: "3",
-        name: "Карта Региональных Советов",
-        description: "Карта, показывающая все региональные советы",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "11.03.2025 18:09",
-      },
-    ],
-    uz: [
-      {
-        id: "1",
-        name: "O'zbekiston ma'muriy xaritasi",
-        description: "O'zbekistonning ma'muriy bo'linishi",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "13.03.2025 11:00",
-      },
-      {
-        id: "2",
-        name: "Toshkent shahar xaritasi",
-        description: "Toshkent shahar tumanlarining batafsil xaritasi",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "12.03.2025 11:14",
-      },
-      {
-        id: "3",
-        name: "Hududiy Kengashlar xaritasi",
-        description: "Barcha hududiy kengashlarni ko'rsatuvchi xarita",
-        imageUrl: "/placeholder.svg?height=200&width=300",
-        lastUpdated: "11.03.2025 18:09",
-      },
-    ],
-  }
+  // Load region data
+  useEffect(() => {
+    const loadRegionsData = async () => {
+      setIsLoading(true)
+      try {
+        // In a real app, this would be an API call
+        // For now, we'll use mock data
+        const mockData: RegionData[] = REGIONS.map((region) => ({
+          id: region,
+          name: getRegionName(region, language),
+          chairmanName: `${getRegionName(region, language)} Fermerlar Kengashi Raisi`,
+          language,
+        }))
 
-  const [mapsByLanguage, setMapsByLanguage] = useState(mockMapsByLanguage)
-
-  const handleUploadMap = (id: string) => {
-    // In a real application, this would open a file picker and upload the file
-    const fileInput = document.createElement("input")
-    fileInput.type = "file"
-    fileInput.accept = "image/*"
-    fileInput.onchange = (e) => {
-      const target = e.target as HTMLInputElement
-      if (target.files && target.files[0]) {
-        // Simulate file upload
+        setRegionsData(mockData)
+      } catch (error) {
+        console.error("Error loading regions data:", error)
         toast({
-          title: t("success"),
-          description: t("mapUpdatedSuccessfully"),
+          title: t("error"),
+          description: t("errorLoadingRegionsData"),
+          variant: "destructive",
         })
-
-        // Update the lastUpdated timestamp only for the current language
-        setMapsByLanguage((prev) => {
-          const newState = { ...prev }
-          newState[language] = newState[language].map((map) =>
-            map.id === id ? { ...map, lastUpdated: new Date().toLocaleString("ru-RU") } : map,
-          )
-          return newState
-        })
+      } finally {
+        setIsLoading(false)
       }
     }
-    fileInput.click()
+
+    loadRegionsData()
+  }, [language, toast, t])
+
+  // Helper function to get region name in the current language
+  function getRegionName(regionId: string, lang: string): string {
+    const regionNames: Record<string, Record<string, string>> = {
+      tashkent: {
+        uz: "Toshkent viloyati",
+        "uz-cyrl": "Тошкент вилояти",
+        ru: "Ташкентская область",
+      },
+      tashkent_city: {
+        uz: "Toshkent shahri",
+        "uz-cyrl": "Тошкент шаҳри",
+        ru: "город Ташкент",
+      },
+      andijan: {
+        uz: "Andijon viloyati",
+        "uz-cyrl": "Андижон вилояти",
+        ru: "Андижанская область",
+      },
+      bukhara: {
+        uz: "Buxoro viloyati",
+        "uz-cyrl": "Бухоро вилояти",
+        ru: "Бухарская область",
+      },
+      fergana: {
+        uz: "Farg'ona viloyati",
+        "uz-cyrl": "Фарғона вилояти",
+        ru: "Ферганская область",
+      },
+      jizzakh: {
+        uz: "Jizzax viloyati",
+        "uz-cyrl": "Жиззах вилояти",
+        ru: "Джизакская область",
+      },
+      karakalpakstan: {
+        uz: "Qoraqalpog'iston Respublikasi",
+        "uz-cyrl": "Қорақалпоғистон Республикаси",
+        ru: "Республика Каракалпакстан",
+      },
+      kashkadarya: {
+        uz: "Qashqadaryo viloyati",
+        "uz-cyrl": "Қашқадарё вилояти",
+        ru: "Кашкадарьинская область",
+      },
+      khorezm: {
+        uz: "Xorazm viloyati",
+        "uz-cyrl": "Хоразм вилояти",
+        ru: "Хорезмская область",
+      },
+      namangan: {
+        uz: "Namangan viloyati",
+        "uz-cyrl": "Наманган вилояти",
+        ru: "Наманганская область",
+      },
+      navoi: {
+        uz: "Navoiy viloyati",
+        "uz-cyrl": "Навоий вилояти",
+        ru: "Навоийская область",
+      },
+      samarkand: {
+        uz: "Samarqand viloyati",
+        "uz-cyrl": "Самарқанд вилояти",
+        ru: "Самаркандская область",
+      },
+      surkhandarya: {
+        uz: "Surxondaryo viloyati",
+        "uz-cyrl": "Сурхондарё вилояти",
+        ru: "Сурхандарьинская область",
+      },
+      syrdarya: {
+        uz: "Sirdaryo viloyati",
+        "uz-cyrl": "Сирдарё вилояти",
+        ru: "Сырдарьинская область",
+      },
+    }
+
+    return regionNames[regionId]?.[lang] || regionId
   }
 
-  const handleEditDetails = (id: string) => {
-    // In a real application, this would open a modal or navigate to an edit page
-    toast({
-      title: t("editDetails"),
-      description: t("editMapDetailsDescription"),
-    })
+  const handleEditClick = (regionId: string, currentValue: string) => {
+    setEditingRegion(regionId)
+    setEditValue(currentValue)
   }
 
-  const handleSaveMap = () => {
+  const handleSaveEdit = (regionId: string) => {
+    setRegionsData((prev) =>
+      prev.map((region) => (region.id === regionId ? { ...region, chairmanName: editValue } : region)),
+    )
+    setEditingRegion(null)
+
     toast({
       title: t("success"),
-      description: t("mapSavedSuccessfully"),
+      description: t("regionDataUpdatedSuccessfully"),
     })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingRegion(null)
+  }
+
+  const handleRegionHover = (regionId: string | null) => {
+    setHoveredRegion(regionId)
   }
 
   return (
     <DashboardLayout>
-      <div>
-        <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-2xl font-bold">{t("maps")}</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("language")}:</span>
-              <Select value={language} onValueChange={(value: "uz-cyrl" | "ru" | "uz") => setLanguage(value)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="uz-cyrl">Ўзбекча (Кирилл)</SelectItem>
-                  <SelectItem value="ru">Русский</SelectItem>
-                  <SelectItem value="uz">O'zbekcha</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
+      <div className="container mx-auto py-6">
+        <h1 className="text-2xl font-bold mb-6">{t("maps")}</h1>
 
-        <div className="space-y-6">
-          {/* Existing Maps Table */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Map Preview */}
           <Card>
-            <CardHeader className="bg-primary text-primary-foreground">
-              <CardTitle>{t("manageMaps")}</CardTitle>
+            <CardHeader>
+              <CardTitle>{t("mapPreview")}</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent>
+              <div className="relative border rounded-md overflow-hidden" style={{ height: "500px" }}>
+                <UzbekistanMap onRegionHover={handleRegionHover} activeRegion={hoveredRegion} />
+
+                {hoveredRegion && (
+                  <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 p-4 rounded-md shadow-md">
+                    <h3 className="font-medium mb-1">{getRegionName(hoveredRegion, language)}</h3>
+                    <p className="text-sm">
+                      {t("farmersCouncilChairman")}:{" "}
+                      {regionsData.find((r) => r.id === hoveredRegion)?.chairmanName || ""}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Region Data Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("regionsData")}</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Table>
-                <TableHeader className="bg-gray-100 dark:bg-gray-800">
+                <TableHeader>
                   <TableRow>
-                    <TableHead>{t("preview")}</TableHead>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead>{t("description")}</TableHead>
-                    <TableHead>{t("lastUpdated")}</TableHead>
-                    <TableHead>{t("actions")}</TableHead>
+                    <TableHead>{t("region")}</TableHead>
+                    <TableHead>{t("chairmanName")}</TableHead>
+                    <TableHead className="w-[100px]">{t("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mapsByLanguage[language]?.map((map) => (
-                    <TableRow key={map.id} className="border-gray-200 dark:border-gray-700">
-                      <TableCell>
-                        <div className="relative h-20 w-32 overflow-hidden rounded border">
-                          <Image
-                            src={map.imageUrl || "/placeholder.svg"}
-                            alt={map.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{map.name}</TableCell>
-                      <TableCell>{map.description}</TableCell>
-                      <TableCell>{map.lastUpdated}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1"
-                            onClick={() => handleUploadMap(map.id)}
-                          >
-                            <Upload className="h-4 w-4" />
-                            {t("uploadNew")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1"
-                            onClick={() => handleEditDetails(map.id)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            {t("editDetails")}
-                          </Button>
-                        </div>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-4">
+                        {t("loading")}...
                       </TableCell>
                     </TableRow>
-                  ))}
-                  {!mapsByLanguage[language] ||
-                    (mapsByLanguage[language].length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                          {t("noMapsFound")}
+                  ) : regionsData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-4">
+                        {t("noRegionsFound")}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    regionsData.map((region) => (
+                      <TableRow key={region.id}>
+                        <TableCell>{region.name}</TableCell>
+                        <TableCell>
+                          {editingRegion === region.id ? (
+                            <Input
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-full"
+                            />
+                          ) : (
+                            region.chairmanName
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingRegion === region.id ? (
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleSaveEdit(region.id)}
+                                title={t("save")}
+                              >
+                                <Save className="h-4 w-4 text-green-500" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={handleCancelEdit} title={t("cancel")}>
+                                <X className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditClick(region.id, region.chairmanName)}
+                              title={t("edit")}
+                            >
+                              <Pencil className="h-4 w-4 text-amber-500" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -228,4 +287,3 @@ export default function MapsPage() {
     </DashboardLayout>
   )
 }
-

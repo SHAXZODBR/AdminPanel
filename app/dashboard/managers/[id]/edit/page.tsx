@@ -15,9 +15,10 @@ import { useToast } from "@/hooks/use-toast"
 import { useStore } from "@/lib/store"
 import { Paperclip } from "lucide-react"
 import Image from "next/image"
+import { BASE_URL } from "@/lib/constants"
 
 export default function EditManagerPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
   const params = useParams()
   const { toast } = useToast()
@@ -37,41 +38,74 @@ export default function EditManagerPage() {
   useEffect(() => {
     const leaderId = params.id as string
 
-    // Find the leader in all language collections
-    let foundLeader = null
-    let foundLanguage = ""
+    // Set loading state
+    setIsLoading(true)
 
-    for (const lang of ["en", "ru", "uz"]) {
-      const leader = leaders[lang]?.find((l) => l.id === leaderId)
-      if (leader) {
-        foundLeader = leader
-        foundLanguage = lang
-        break
+    const fetchLeaderData = async () => {
+      try {
+        // Try to fetch data from the API first
+        const response = await fetch(`${BASE_URL}/${language}/api/leadership/${leaderId}/`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (response.ok) {
+          const leaderData = await response.json()
+
+          setFormData({
+            language: leaderData.language || language,
+            fullName: leaderData.f_name || leaderData.full_name || "",
+            position: leaderData.position_text || leaderData.position || leaderData.title || "",
+            phoneNumber: leaderData.phone || leaderData.phone_number || "",
+            email: leaderData.email || "",
+            bio: leaderData.biography_text || leaderData.description || leaderData.bio || "",
+            photo: null,
+            currentPhoto: leaderData.image || leaderData.photo || "/placeholder.svg?height=100&width=100",
+          })
+
+          setIsLoading(false)
+          return
+        }
+
+        // Fall back to store if API fails
+        throw new Error("API request failed")
+      } catch (error) {
+        console.error("Error fetching from API, falling back to store data")
+
+        // Get leader from store
+        const foundLeader = leaders[language]?.find((leader) => leader.id === leaderId)
+
+        if (foundLeader) {
+          setFormData({
+            language: foundLeader.language,
+            fullName: foundLeader.fullName,
+            position: foundLeader.position,
+            phoneNumber: foundLeader.phoneNumber,
+            email: foundLeader.email,
+            bio: foundLeader.bio || "",
+            photo: null,
+            currentPhoto: foundLeader.photo || "/placeholder.svg?height=100&width=100",
+          })
+        } else {
+          toast({
+            title: "Error",
+            description: "Manager not found",
+            variant: "destructive",
+          })
+          router.push("/dashboard/managers")
+        }
+
+        setIsLoading(false)
       }
     }
 
-    if (foundLeader) {
-      setFormData({
-        language: foundLeader.language,
-        fullName: foundLeader.fullName,
-        position: foundLeader.position,
-        phoneNumber: foundLeader.phoneNumber,
-        email: foundLeader.email,
-        bio: foundLeader.bio || "",
-        photo: null,
-        currentPhoto: foundLeader.photo || "/placeholder.svg?height=100&width=100",
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "Manager not found",
-        variant: "destructive",
-      })
-      router.push("/dashboard/managers")
-    }
-  }, [params.id, leaders, router, toast])
+    fetchLeaderData()
+  }, [params.id, language, leaders, router, toast])
 
-  // Update the handleSubmit function to ensure proper language handling
+  // Update the handleSubmit function to ensure proper data handling
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -89,8 +123,11 @@ export default function EditManagerPage() {
     const leaderId = params.id as string
 
     try {
+      // Add a slight delay to prevent data reversion
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
       // Update leader in store with the specific language
-      updateLeader(leaderId, formData.language as "en" | "ru" | "uz", {
+      await updateLeader(leaderId, formData.language as "en" | "ru" | "uz", {
         fullName: formData.fullName,
         position: formData.position,
         phoneNumber: formData.phoneNumber,
@@ -100,20 +137,26 @@ export default function EditManagerPage() {
         // In a real app, we would handle photo upload here
       })
 
+      // Another small delay before showing success message
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
       toast({
         title: "Success",
         description: "Manager has been updated successfully",
       })
 
-      // Navigate back to the managers page
-      router.push("/dashboard/managers")
+      // Add delay before navigation to ensure state updates have been applied
+      setTimeout(() => {
+        setIsLoading(false)
+        router.push("/dashboard/managers")
+      }, 500)
     } catch (error) {
+      console.error("Failed to update manager:", error)
       toast({
         title: "Error",
         description: "Failed to update manager",
         variant: "destructive",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -238,4 +281,3 @@ export default function EditManagerPage() {
     </DashboardLayout>
   )
 }
-

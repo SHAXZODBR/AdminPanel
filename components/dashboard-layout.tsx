@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { LanguageSwitcher } from "@/components/language-switcher"
@@ -15,15 +15,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { t } = useLanguage()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem("isAuthenticated")
-    if (!isAuthenticated) {
+    const authStatus = localStorage.getItem("isAuthenticated")
+    if (!authStatus) {
       router.push("/login")
+    } else {
+      setIsAuthenticated(true)
     }
+    setIsLoading(false)
   }, [router])
 
-  // Fix the back button navigation logic
+  // Add better back button handling logic
   const handleBackClick = () => {
     // Get the current path segments
     const segments = pathname.split("/").filter(Boolean)
@@ -33,6 +38,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       segments.length > 2 &&
       (segments[2] === "edit" || segments[2] === "add" || segments.includes("edit") || segments.includes("add"))
     ) {
+      // Get the base section (users, managers, etc.)
       const basePath = "/" + segments.slice(0, 2).join("/")
       router.push(basePath)
     }
@@ -45,6 +51,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       const newPath = "/" + segments.slice(0, segments.length - 1).join("/")
       router.push(newPath)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null // Don't render anything if not authenticated
   }
 
   return (
@@ -71,4 +89,3 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
-

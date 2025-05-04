@@ -12,97 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-
-// Mock data for YouTube videos
-const mockYouTubeVideos = {
-  "uz-cyrl": [
-    {
-      id: "1",
-      language: "uz-cyrl",
-      title: "Ўзбекистон янгиликлари",
-      videoId: "dQw4w9WgXcQ",
-      category: "Янгиликлар",
-      isActive: true,
-      createdAt: "13.03.2025 11:00",
-    },
-    {
-      id: "2",
-      language: "uz-cyrl",
-      title: "Тошкент шаҳрида янги бинолар",
-      videoId: "dQw4w9WgXcQ",
-      category: "Шаҳарсозлик",
-      isActive: true,
-      createdAt: "12.03.2025 11:14",
-    },
-    {
-      id: "3",
-      language: "uz-cyrl",
-      title: "Ўзбекистон тарихи ҳақида",
-      videoId: "dQw4w9WgXcQ",
-      category: "Таълим",
-      isActive: false,
-      createdAt: "11.03.2025 18:09",
-    },
-  ],
-  ru: [
-    {
-      id: "1",
-      language: "ru",
-      title: "Новости Узбекистана",
-      videoId: "dQw4w9WgXcQ",
-      category: "Новости",
-      isActive: true,
-      createdAt: "13.03.2025 11:00",
-    },
-    {
-      id: "2",
-      language: "ru",
-      title: "Новые здания в городе Ташкент",
-      videoId: "dQw4w9WgXcQ",
-      category: "Градостроительство",
-      isActive: true,
-      createdAt: "12.03.2025 11:14",
-    },
-    {
-      id: "3",
-      language: "ru",
-      title: "Об истории Узбекистана",
-      videoId: "dQw4w9WgXcQ",
-      category: "Образование",
-      isActive: false,
-      createdAt: "11.03.2025 18:09",
-    },
-  ],
-  uz: [
-    {
-      id: "1",
-      language: "uz",
-      title: "O'zbekiston yangiliklari",
-      videoId: "dQw4w9WgXcQ",
-      category: "Yangiliklar",
-      isActive: true,
-      createdAt: "13.03.2025 11:00",
-    },
-    {
-      id: "2",
-      language: "uz",
-      title: "Toshkent shahrida yangi binolar",
-      videoId: "dQw4w9WgXcQ",
-      category: "Shaharsozlik",
-      isActive: true,
-      createdAt: "12.03.2025 11:14",
-    },
-    {
-      id: "3",
-      language: "uz",
-      title: "O'zbekiston tarixi haqida",
-      videoId: "dQw4w9WgXcQ",
-      category: "Ta'lim",
-      isActive: false,
-      createdAt: "11.03.2025 18:09",
-    },
-  ],
-}
+import { api } from "@/lib/api"
 
 export default function EditYouTubeVideoPage() {
   const { t, language, setLanguage } = useLanguage()
@@ -121,39 +31,45 @@ export default function EditYouTubeVideoPage() {
   useEffect(() => {
     const videoId = params.id as string
 
-    // Find the video in all language collections
-    let foundVideo = null
-    let foundLanguage = ""
+    const fetchVideo = async () => {
+      try {
+        // Use the mock YouTube videos service
+        const video = await api.admin.youtube.getById(videoId, language)
 
-    for (const lang of Object.keys(mockYouTubeVideos)) {
-      const video = mockYouTubeVideos[lang].find((v) => v.id === videoId)
-      if (video) {
-        foundVideo = video
-        foundLanguage = lang
-        break
+        if (video) {
+          setFormData({
+            language: video.language || language,
+            title: video.title || "",
+            videoId: video.videoId || "",
+            category: video.category || "",
+            isActive: video.isActive !== undefined ? video.isActive : true,
+          })
+
+          // Set the language in the language provider to match the item's language
+          if (video.language) {
+            setLanguage(video.language as "uz-cyrl" | "ru" | "uz")
+          }
+        } else {
+          toast({
+            title: t("error"),
+            description: t("youtubeVideoNotFound"),
+            variant: "destructive",
+          })
+          router.push("/dashboard/youtube-videos")
+        }
+      } catch (error) {
+        console.error(`Error fetching YouTube video ${videoId}:`, error)
+        toast({
+          title: t("error"),
+          description: t("errorLoadingYouTubeVideo"),
+          variant: "destructive",
+        })
+        router.push("/dashboard/youtube-videos")
       }
     }
 
-    if (foundVideo) {
-      setFormData({
-        language: foundVideo.language,
-        title: foundVideo.title,
-        videoId: foundVideo.videoId,
-        category: foundVideo.category,
-        isActive: foundVideo.isActive,
-      })
-
-      // Set the language in the language provider to match the item's language
-      setLanguage(foundVideo.language as "uz-cyrl" | "ru" | "uz")
-    } else {
-      toast({
-        title: "Error",
-        description: "YouTube video not found",
-        variant: "destructive",
-      })
-      router.push("/dashboard/youtube-videos")
-    }
-  }, [params.id, router, toast, setLanguage])
+    fetchVideo()
+  }, [params.id, router, toast, setLanguage, language, t])
 
   const extractVideoId = (url: string) => {
     // Extract video ID from various YouTube URL formats
@@ -188,8 +104,14 @@ export default function EditYouTubeVideoPage() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Update the YouTube video using the mock service
+      await api.admin.youtube.update(params.id as string, language, {
+        language: formData.language as "en" | "ru" | "uz" | "uz-cyrl",
+        title: formData.title,
+        videoId: formData.videoId,
+        category: formData.category,
+        isActive: formData.isActive,
+      })
 
       toast({
         title: "Success",
@@ -349,4 +271,3 @@ export default function EditYouTubeVideoPage() {
     </DashboardLayout>
   )
 }
-

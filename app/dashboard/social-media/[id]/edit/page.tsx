@@ -12,50 +12,51 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { api } from "@/lib/api"
 
-// Mock data for social media
-const mockSocialMedia = [
-  {
-    id: "1",
-    platform: "Facebook",
-    url: "https://facebook.com/example",
-    icon: "facebook",
-    isActive: true,
-    createdAt: "13.03.2025 11:00",
-  },
-  {
-    id: "2",
-    platform: "Twitter",
-    url: "https://twitter.com/example",
-    icon: "twitter",
-    isActive: true,
-    createdAt: "12.03.2025 11:14",
-  },
-  {
-    id: "3",
-    platform: "Instagram",
-    url: "https://instagram.com/example",
-    icon: "instagram",
-    isActive: true,
-    createdAt: "11.03.2025 18:09",
-  },
-  {
-    id: "4",
-    platform: "YouTube",
-    url: "https://youtube.com/example",
-    icon: "youtube",
-    isActive: false,
-    createdAt: "10.03.2025 14:30",
-  },
-  {
-    id: "5",
-    platform: "Telegram",
-    url: "https://t.me/example",
-    icon: "telegram",
-    isActive: true,
-    createdAt: "09.03.2025 10:15",
-  },
-]
+// Remove this entire mock data
+// const mockSocialMedia = [
+//   {
+//     id: "1",
+//     platform: "Facebook",
+//     url: "https://facebook.com/example",
+//     icon: "facebook",
+//     isActive: true,
+//     createdAt: "13.03.2025 11:00",
+//   },
+//   {
+//     id: "2",
+//     platform: "Twitter",
+//     url: "https://twitter.com/example",
+//     icon: "twitter",
+//     isActive: true,
+//     createdAt: "12.03.2025 11:14",
+//   },
+//   {
+//     id: "3",
+//     platform: "Instagram",
+//     url: "https://instagram.com/example",
+//     icon: "instagram",
+//     isActive: true,
+//     createdAt: "11.03.2025 18:09",
+//   },
+//   {
+//     id: "4",
+//     platform: "YouTube",
+//     url: "https://youtube.com/example",
+//     icon: "youtube",
+//     isActive: false,
+//     createdAt: "10.03.2025 14:30",
+//   },
+//   {
+//     id: "5",
+//     platform: "Telegram",
+//     url: "https://t.me/example",
+//     icon: "telegram",
+//     isActive: true,
+//     createdAt: "09.03.2025 10:15",
+//   },
+// ]
 
 export default function EditSocialMediaPage() {
   const { t } = useLanguage()
@@ -70,26 +71,44 @@ export default function EditSocialMediaPage() {
     isActive: true,
   })
 
+  // Replace the useEffect that uses mock data with one that uses the API client
   useEffect(() => {
     const socialMediaId = params.id as string
-    const socialMedia = mockSocialMedia.find((item) => item.id === socialMediaId)
 
-    if (socialMedia) {
-      setFormData({
-        platform: socialMedia.platform,
-        url: socialMedia.url,
-        icon: socialMedia.icon,
-        isActive: socialMedia.isActive,
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "Social media not found",
-        variant: "destructive",
-      })
-      router.push("/dashboard/social-media")
+    const fetchSocialMedia = async () => {
+      try {
+        // Use the API client to fetch the social media by ID
+        const response = await api.socialNetworks.getById(socialMediaId)
+
+        if (response) {
+          const socialMedia = response
+          setFormData({
+            platform: socialMedia.name || socialMedia.platform || "",
+            url: socialMedia.url || "",
+            icon: socialMedia.icon || socialMedia.name?.toLowerCase() || "",
+            isActive: socialMedia.is_active !== undefined ? socialMedia.is_active : true,
+          })
+        } else {
+          toast({
+            title: t("error"),
+            description: t("socialMediaNotFound"),
+            variant: "destructive",
+          })
+          router.push("/dashboard/social-media")
+        }
+      } catch (error) {
+        console.error(`Error fetching social media ${socialMediaId}:`, error)
+        toast({
+          title: t("error"),
+          description: t("errorLoadingSocialMedia"),
+          variant: "destructive",
+        })
+        router.push("/dashboard/social-media")
+      }
     }
-  }, [params.id, router, toast])
+
+    fetchSocialMedia()
+  }, [params.id, router, toast, t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -212,4 +231,3 @@ export default function EditSocialMediaPage() {
     </DashboardLayout>
   )
 }
-

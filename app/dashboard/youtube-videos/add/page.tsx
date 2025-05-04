@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { api } from "@/lib/api"
 
 export default function AddYouTubeVideoPage() {
   const { t, language, setLanguage } = useLanguage()
@@ -47,6 +48,7 @@ export default function AddYouTubeVideoPage() {
     }
   }
 
+  // Update the handleSubmit function to use the mock YouTube videos service
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -62,8 +64,14 @@ export default function AddYouTubeVideoPage() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Create the YouTube video using the mock service
+      await api.admin.youtube.create({
+        language: formData.language as "en" | "ru" | "uz" | "uz-cyrl",
+        title: formData.title,
+        videoId: formData.videoId,
+        category: formData.category,
+        isActive: formData.isActive,
+      })
 
       toast({
         title: "Success",
@@ -198,4 +206,3 @@ export default function AddYouTubeVideoPage() {
     </DashboardLayout>
   )
 }
-

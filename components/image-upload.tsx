@@ -110,4 +110,3 @@ export function ImageUpload({ onImagesSelected, initialImages = [], multiple = t
     </div>
   )
 }
-

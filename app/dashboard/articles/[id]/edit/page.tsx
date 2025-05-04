@@ -3,237 +3,271 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RichTextEditor } from "@/components/rich-text-editor"
-import { useToast } from "@/hooks/use-toast"
-import { useStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Paperclip } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { ArrowLeft, Save, AlertCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-export default function EditArticlePage() {
-  const { t, language: currentLanguage } = useLanguage()
+interface ArticleData {
+  id: string
+  title: string
+  category: string
+  content: string
+  language: string
+  images?: string[]
+}
+
+export default function EditArticlePage({ params }: { params: { id: string } }) {
+  const { id } = params
+  const { t, language } = useLanguage()
   const router = useRouter()
-  const params = useParams()
   const { toast } = useToast()
-  const { articles, updateArticle } = useStore()
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    language: "ru",
-    poster: null as File | null,
-    additionalImages: [] as File[],
-    author: "",
-    newsType: "",
-    category: "",
+
+  const [article, setArticle] = useState<ArticleData>({
+    id: "",
     title: "",
+    category: "",
     content: "",
-    tags: [] as string[],
-    publishDate: "",
-    audio: null as File | null,
+    language: language,
+    images: [],
   })
 
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  // Base API URL
+  const API_BASE_URL = "https://uzfk.uz"
+
   useEffect(() => {
-    const articleId = params.id as string
+    const fetchArticleData = async () => {
+      setIsLoading(true)
+      setApiError(null)
 
-    // Find the article in all language collections
-    let foundArticle = null
-    let foundLanguage = ""
+      try {
+        // Use the content/{id} endpoint to fetch a specific article
+        const apiUrl = `${API_BASE_URL}/${language}/api/content/${id}/`
 
-    for (const lang of ["uz-cyrl", "ru", "uz"]) {
-      const article = articles[lang]?.find((a) => a.id === articleId)
-      if (article) {
-        foundArticle = article
-        foundLanguage = lang
-        break
+        console.log(`Fetching article from: ${apiUrl}`)
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!response.ok) {
+          // If the response is 404, it means the article is not found
+          if (response.status === 404) {
+            toast({
+              title: t("error"),
+              description: t("articleNotFound"),
+              variant: "destructive",
+            })
+            router.push("/dashboard/articles")
+            return
+          }
+          throw new Error(`API request failed with status ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("Article data received:", data)
+
+        setArticle({
+          id: data.id?.toString() || id,
+          title: data.title || "",
+          category: data.type || "article",
+          content: data.body || data.content || "",
+          language: language,
+          images: data.image ? [`${API_BASE_URL}${data.image}`] : [],
+        })
+      } catch (error) {
+        console.error("Error fetching article:", error)
+        setApiError(error instanceof Error ? error.message : "Unknown error")
+
+        toast({
+          title: t("error"),
+          description: t("errorLoadingArticle"),
+          variant: "destructive",
+        })
+
+        // Redirect back to articles list on error
+        router.push("/dashboard/articles")
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    if (foundArticle) {
-      setFormData({
-        ...formData,
-        language: foundArticle.language,
-        author: foundArticle.author,
-        newsType: foundArticle.category,
-        category: foundArticle.category,
-        title: foundArticle.title,
-        content: foundArticle.content || "",
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "News not found",
-        variant: "destructive",
-      })
-      router.push("/dashboard/articles")
-    }
-  }, [params.id, articles, router, toast])
+    fetchArticleData()
+  }, [id, language, router, toast, t])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setArticle((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setArticle((prev) => ({ ...prev, category: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.title || !formData.newsType) {
-      toast({
-        title: "Error",
-        description: "Title and news type are required",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsLoading(true)
-
-    const articleId = params.id as string
+    setIsSaving(true)
+    setApiError(null)
 
     try {
-      // Update article in store with the specific language
-      updateArticle(articleId, formData.language as "en" | "ru" | "uz" | "uz-cyrl", {
-        title: formData.title,
-        category: formData.newsType,
-        author: formData.author,
-        content: formData.content,
-        language: formData.language as "en" | "ru" | "uz" | "uz-cyrl", // Ensure language is updated
+      // Prepare the data for API update
+      const updateData = {
+        title: article.title,
+        type: article.category,
+        body: article.content,
+        language: article.language,
+      }
+
+      console.log("Updating article with data:", updateData)
+
+      // Use the PUT endpoint to update the article
+      const apiUrl = `${API_BASE_URL}/${language}/api/content/${id}/`
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(updateData),
       })
+
+      if (!response.ok) {
+        // If the response is 404, it means the article is not found
+        if (response.status === 404) {
+          toast({
+            title: t("error"),
+            description: t("articleNotFound"),
+            variant: "destructive",
+          })
+          router.push("/dashboard/articles")
+          return
+        }
+        throw new Error(`API update failed with status ${response.status}`)
+      }
+
+      const updatedData = await response.json()
+      console.log("API update successful:", updatedData)
 
       toast({
-        title: "Success",
-        description: "News has been updated successfully",
+        title: t("success"),
+        description: t("articleUpdatedSuccessfully"),
       })
 
-      // Navigate back to the articles page
       router.push("/dashboard/articles")
     } catch (error) {
+      console.error("Error updating article:", error)
+      setApiError(error instanceof Error ? error.message : "Unknown error")
+
       toast({
-        title: "Error",
-        description: "Failed to update news",
+        title: t("error"),
+        description: t("errorUpdatingArticle"),
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "poster" | "audio") => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFormData({ ...formData, [field]: file })
+      setIsSaving(false)
     }
   }
 
   return (
     <DashboardLayout>
-      <div>
-        <h2 className="mb-6 text-2xl font-bold">{t("editArticle")}</h2>
-        <Card>
-          <CardHeader className="filter-section-dark">
-            <CardTitle className="text-white">{t("editArticle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("language")}</label>
-                <Select
-                  value={formData.language}
-                  onValueChange={(value) => setFormData({ ...formData, language: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("selectLanguage")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ru">Русский язык</SelectItem>
-                    <SelectItem value="uz">O'zbek tili</SelectItem>
-                    <SelectItem value="uz-cyrl">Ўзбекча (Кирилл)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+      <div className="container mx-auto py-6">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" onClick={() => router.push("/dashboard/articles")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("back")}
+          </Button>
+          <h1 className="text-2xl font-bold ml-4">{t("editArticle")}</h1>
+        </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("title")}</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder={t("title")}
-                  required
-                />
+        {apiError && (
+          <Card className="mb-6 border-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center text-red-500">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <p>API Error: {apiError}</p>
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("poster")}</label>
-                <div className="flex items-center gap-2">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-32">
+            <p>{t("loading")}</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{t("articleDetails")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="title">{t("title")}</Label>
                   <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "poster")}
-                    className="hidden"
-                    id="poster"
+                    id="title"
+                    name="title"
+                    value={article.title}
+                    onChange={handleChange}
+                    placeholder={t("enterTitle")}
+                    required
                   />
-                  <Button type="button" variant="outline" onClick={() => document.getElementById("poster")?.click()}>
-                    <Paperclip className="mr-2 h-4 w-4" />
-                    {t("uploadPoster")}
-                  </Button>
-                  {formData.poster && <span className="text-sm">{formData.poster.name}</span>}
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("newsType")}</label>
-                <Select
-                  value={formData.newsType}
-                  onValueChange={(value) => setFormData({ ...formData, newsType: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("selectNewsType")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Янгиликлар">Янгиликлар</SelectItem>
-                    <SelectItem value="Эълонлар">Эълонлар</SelectItem>
-                    <SelectItem value="Баннер">Баннер</SelectItem>
-                    <SelectItem value="Биз ҳақимизда">Биз ҳақимизда</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div>
+                  <Label htmlFor="category">{t("category")}</Label>
+                  <Select value={article.category} onValueChange={handleCategoryChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("selectCategory")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="article">Article</SelectItem>
+                      <SelectItem value="news">News</SelectItem>
+                      <SelectItem value="Мақолалар">Мақолалар</SelectItem>
+                      <SelectItem value="Янгиликлар">Янгиликлар</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("content")}</label>
-                <RichTextEditor
-                  value={formData.content}
-                  onChange={(value) => setFormData({ ...formData, content: value })}
-                  placeholder={t("content")}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("audio")}</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => handleFileChange(e, "audio")}
-                    className="hidden"
-                    id="audio"
+                <div>
+                  <Label htmlFor="content">{t("content")}</Label>
+                  <Textarea
+                    id="content"
+                    name="content"
+                    value={article.content}
+                    onChange={handleChange}
+                    placeholder={t("enterContent")}
+                    rows={10}
+                    required
                   />
-                  <Button type="button" variant="outline" onClick={() => document.getElementById("audio")?.click()}>
-                    <Paperclip className="mr-2 h-4 w-4" />
-                    {t("uploadAudio")}
-                  </Button>
-                  {formData.audio && <span className="text-sm">{formData.audio.name}</span>}
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex justify-end">
-                <Button type="submit" className="button-primary" disabled={isLoading}>
-                  {isLoading ? t("saving") : t("save")}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? t("saving") : t("save")}
+                {!isSaving && <Save className="ml-2 h-4 w-4" />}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </DashboardLayout>
   )
 }
-

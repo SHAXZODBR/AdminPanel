@@ -1,14 +1,13 @@
 import type React from "react"
+import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import { Providers } from "@/components/providers"
-import { Toaster } from "@/components/ui/toaster"
-import "@/app/globals.css"
 
-const inter = Inter({ subsets: ["latin", "cyrillic"] })
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Admin Dashboard",
-  description: "Multilingual Admin Dashboard",
+  title: "UZFK Admin Dashboard",
+  description: "Admin dashboard for UZFK website",
   generator: "v0.dev",
 }
 
@@ -20,10 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>
-          {children}
-          <Toaster />
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
@@ -37,6 +33,4 @@ import "./globals.css"
 
 import "./globals.css"
 
-
-
-import './globals.css'
+import "./globals.css"

@@ -1,193 +1,279 @@
 "use client"
 
-import { TableCell } from "@/components/ui/table"
-import { TableBody } from "@/components/ui/table"
-import { TableHead } from "@/components/ui/table"
-import { TableRow } from "@/components/ui/table"
-import { TableHeader } from "@/components/ui/table"
-import { Table } from "@/components/ui/table"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DeleteDialog } from "@/components/delete-dialog"
-import Image from "next/image"
-import Link from "next/link"
-import { Pencil, Plus } from "lucide-react"
-import { useStore } from "@/lib/store"
+import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+
+interface Article {
+  id: string
+  title: string
+  category: string
+  date: string
+  language: string
+  content: string
+  images?: string[]
+}
 
 export default function ArticlesPage() {
-  const { language, t } = useLanguage()
-  const { articles, deleteArticle } = useStore()
-  const [nameFilter, setNameFilter] = useState("")
-  const [idFilter, setIdFilter] = useState("")
-  const [typeFilter, setTypeFilter] = useState("")
-  const [rowsPerPage, setRowsPerPage] = useState("10")
-  const [currentArticles, setCurrentArticles] = useState(articles[language] || [])
+  const { t, language } = useLanguage()
+  const router = useRouter()
+  const { toast } = useToast()
 
+  const [searchTitle, setSearchTitle] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("")
+  const [selectedLanguage, setSelectedLanguage] = useState(language)
+  const [articleItems, setArticleItems] = useState<Article[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  // Base API URL
+  const API_BASE_URL = "https://uzfk.uz"
+
+  // Load articles from API
   useEffect(() => {
-    // Make sure we're using the latest articles data
-    setCurrentArticles(articles[language] || [])
-  }, [language, articles])
+    const fetchArticles = async () => {
+      setIsLoading(true)
+      setApiError(null)
 
-  const filteredArticles = currentArticles.filter((article) => {
-    const matchesName = article.title.toLowerCase().includes(nameFilter.toLowerCase())
-    const matchesId = idFilter === "" || article.id === idFilter
-    const matchesType = typeFilter === "all" || typeFilter === "" || article.category === typeFilter
-    return matchesName && matchesId && matchesType
+      try {
+        // Construct the API URL
+        const apiUrl = `${API_BASE_URL}/${language}/api/content`
+
+        console.log(`Fetching articles from: ${apiUrl}`)
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("API response received:", data)
+
+        const articlesData = Array.isArray(data) ? data : data.results || []
+
+        if (articlesData.length === 0) {
+          console.warn("API returned empty results array")
+          setApiError("API returned empty results")
+        }
+
+        // Transform API data to match the expected format
+        const formattedArticles = articlesData.map((item: any) => ({
+          id: item.id?.toString() || Math.random().toString(36).substring(2, 9),
+          title: item.title || "Unknown",
+          category: item.type || "general",
+          date: item.created_at ? new Date(item.created_at).toLocaleDateString() : "Unknown",
+          language: language,
+          content: item.body || item.content || "",
+          images: item.image ? [`${API_BASE_URL}${item.image}`] : [],
+        }))
+
+        setArticleItems(formattedArticles)
+      } catch (error) {
+        console.error("Error fetching articles:", error)
+
+        // Provide more specific error message
+        let errorMessage = t("errorFetchingArticles")
+        if (error instanceof Error) {
+          errorMessage += `: ${error.message}`
+        }
+        setApiError(errorMessage)
+
+        toast({
+          title: t("error"),
+          description: errorMessage,
+          variant: "destructive",
+        })
+
+        // Set empty array to avoid showing loading indefinitely
+        setArticleItems([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchArticles()
+  }, [language, toast, t])
+
+  const filteredArticles = articleItems.filter((item) => {
+    const matchesTitle = item.title?.toLowerCase().includes(searchTitle.toLowerCase()) || false
+    const matchesCategory = selectedCategory && selectedCategory !== "all" ? item.category === selectedCategory : true
+    const matchesLanguage = selectedLanguage !== "all" ? item.language === selectedLanguage : true
+    return matchesTitle && matchesCategory && matchesLanguage
   })
 
-  const handleApplyFilters = () => {
-    // Already filtered by the filteredArticles variable
+  const handleEdit = (id: string) => {
+    router.push(`/dashboard/articles/${id}/edit`)
   }
 
-  const handleClearFilters = () => {
-    setNameFilter("")
-    setIdFilter("")
-    setTypeFilter("")
+  const handleDelete = async (id: string) => {
+    try {
+      // Use the DELETE endpoint to delete the article
+      const apiUrl = `${API_BASE_URL}/${language}/api/content/${id}/`
+
+      const response = await fetch(apiUrl, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`API delete failed with status ${response.status}`)
+      }
+
+      // Remove the deleted article from the state
+      setArticleItems((prev) => prev.filter((item) => item.id !== id))
+
+      toast({
+        title: t("success"),
+        description: t("articleDeletedSuccessfully"),
+      })
+    } catch (error) {
+      console.error("Error deleting article:", error)
+      toast({
+        title: t("error"),
+        description: t("errorDeletingArticle"),
+        variant: "destructive",
+      })
+    }
   }
 
   return (
     <DashboardLayout>
-      <div>
-        <h2 className="mb-6 text-2xl font-bold">{t("articles")}</h2>
-
-        <div className="mb-6 rounded-md border filter-section-dark p-4">
-          <h3 className="mb-4 text-lg font-medium">{t("filters")}</h3>
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <label htmlFor="name" className="mb-1 block text-sm font-medium">
-                {t("title")}
-              </label>
-              <Input
-                id="name"
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-                placeholder={t("title")}
-                className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
-              />
-            </div>
-            <div>
-              <label htmlFor="id" className="mb-1 block text-sm font-medium">
-                {t("id")}
-              </label>
-              <Input
-                id="id"
-                value={idFilter}
-                onChange={(e) => setIdFilter(e.target.value)}
-                placeholder="ID"
-                className="bg-[#3f4b5b] border-[#374151] text-white placeholder:text-gray-400"
-              />
-            </div>
-            <div>
-              <label htmlFor="type" className="mb-1 block text-sm font-medium">
-                {t("newsType")}
-              </label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="bg-[#3f4b5b] border-[#374151] text-white">
-                  <SelectValue placeholder={t("selectNewsType")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Янгиликлар">Янгиликлар</SelectItem>
-                  <SelectItem value="Эълонлар">Эълонлар</SelectItem>
-                  <SelectItem value="Баннер">Баннер</SelectItem>
-                  <SelectItem value="Биз ҳақимизда">Биз ҳақимизда</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleApplyFilters} className="button-secondary">
-              {t("apply")}
-            </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="outline"
-              className="border-[#374151] text-white hover:bg-[#3f4b5b]"
-            >
-              {t("clear")}
-            </Button>
-          </div>
-        </div>
-
-        <div className="mb-4 flex justify-between">
-          <h3 className="text-xl font-medium">{t("articles")}</h3>
-          <Button className="button-primary" asChild>
-            <Link href="/dashboard/articles/add">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("add")}
-            </Link>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">{t("articles")}</h1>
+          <Button onClick={() => router.push("/dashboard/articles/add")}>
+            <Plus className="mr-2 h-4 w-4" /> {t("add")}
           </Button>
         </div>
 
-        <div className="rounded-md border bg-white dark:bg-gray-800 dark:border-gray-700">
-          <Table>
-            <TableHeader className="table-header-dark">
-              <TableRow>
-                <TableHead className="text-white">{t("language")}</TableHead>
-                <TableHead className="text-white">{t("image")}</TableHead>
-                <TableHead className="text-white">{t("newsType")}</TableHead>
-                <TableHead className="text-white">{t("title")}</TableHead>
-                <TableHead className="text-white">{t("author")}</TableHead>
-                <TableHead className="text-white">{t("views")}</TableHead>
-                <TableHead className="text-white">{t("created")}</TableHead>
-                <TableHead className="text-white">{t("actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredArticles.slice(0, Number.parseInt(rowsPerPage)).map((article) => (
-                <TableRow key={article.id} className="border-gray-200 dark:border-gray-700">
-                  <TableCell className="uppercase">{article.language}</TableCell>
-                  <TableCell>
-                    <Image
-                      src={article.image || "/placeholder.svg"}
-                      alt={article.title}
-                      width={80}
-                      height={60}
-                      className="rounded border"
-                    />
-                  </TableCell>
-                  <TableCell>{article.category}</TableCell>
-                  <TableCell>{article.title}</TableCell>
-                  <TableCell>{article.author}</TableCell>
-                  <TableCell>{article.views}</TableCell>
-                  <TableCell>{article.createdAt}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" asChild className="hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <Link href={`/dashboard/articles/${article.id}/edit`}>
-                          <Pencil className="h-4 w-4 text-amber-500" />
-                        </Link>
-                      </Button>
-                      <DeleteDialog itemName={article.title} onDelete={() => deleteArticle(article.id, language)} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="flex items-center justify-end p-4 border-t">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">{t("rowsPerPage")}</span>
-              <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
+        {apiError && (
+          <Card className="mb-6 border-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center text-red-500">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <p>{apiError}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>{t("filters")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">{t("title")}</label>
+                <Input
+                  placeholder={t("searchByTitle")}
+                  value={searchTitle}
+                  onChange={(e) => setSearchTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t("category")}</label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("allCategories")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="article">Articles</SelectItem>
+                    <SelectItem value="news">News</SelectItem>
+                    <SelectItem value="Мақолалар">Мақолалар</SelectItem>
+                    <SelectItem value="Янгиликлар">Янгиликлар</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t("language")}</label>
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("allLanguages")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("allLanguages")}</SelectItem>
+                    <SelectItem value="uz_latn">O'zbekcha (Lotin)</SelectItem>
+                    <SelectItem value="uz_cyrl">Ўзбекча (Кирилл)</SelectItem>
+                    <SelectItem value="ru">Русский</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <p>{t("loading")}</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("title")}</TableHead>
+                    <TableHead>{t("category")}</TableHead>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("language")}</TableHead>
+                    <TableHead className="text-right">{t("actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredArticles.length > 0 ? (
+                    filteredArticles.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.title}</TableCell>
+                        <TableCell>{item.category}</TableCell>
+                        <TableCell>{item.date}</TableCell>
+                        <TableCell>
+                          {item.language === "uz_latn" && "O'zbekcha (Lotin)"}
+                          {item.language === "uz_cyrl" && "Ўзбекча (Кирилл)"}
+                          {item.language === "ru" && "Русский"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4">
+                        {t("noArticlesFound")}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   )
 }
-

@@ -11,6 +11,8 @@ import { DeleteDialog } from "@/components/delete-dialog"
 import Link from "next/link"
 import { Pencil, Plus } from "lucide-react"
 import { useStore } from "@/lib/store"
+import { useToast } from "@/components/ui/use-toast"
+import { apiService } from "@/lib/api-service"
 
 export default function SubordinateOrganizationsPage() {
   const { language, t } = useLanguage()
@@ -19,11 +21,44 @@ export default function SubordinateOrganizationsPage() {
   const [typeFilter, setTypeFilter] = useState("")
   const [rowsPerPage, setRowsPerPage] = useState("10")
   const [currentOrganizations, setCurrentOrganizations] = useState(subordinateOrganizations[language] || [])
+  const { toast } = useToast()
+  const BASE_URL = "https://uzfk.uz"
+
+  // Update the loadOrganizations function
+  const loadOrganizations = async () => {
+    try {
+      // Use the API service to fetch organizations
+      const data = await apiService.organization.getAll(language)
+      console.log("API response received:", data)
+
+      const organizationsData = Array.isArray(data) ? data : data.results || []
+
+      // Transform API data to match the expected format
+      const formattedOrganizations = organizationsData.map((org: any) => ({
+        id: org.id?.toString() || Math.random().toString(36).substring(2, 9),
+        language: org.language || language,
+        name: org.name || "Unknown",
+        type: org.type || "organization",
+        head: org.head || "Unknown",
+        phoneNumber: org.phone_number || "Unknown",
+        email: org.email || "Unknown",
+        address: org.address || "Unknown",
+      }))
+
+      setCurrentOrganizations(formattedOrganizations)
+    } catch (error) {
+      console.error("Error loading organizations data:", error)
+      toast({
+        title: t("error"),
+        description: t("errorLoadingOrganizations"),
+        variant: "destructive",
+      })
+    }
+  }
 
   useEffect(() => {
-    // Make sure we're using the latest organizations data
-    setCurrentOrganizations(subordinateOrganizations[language] || [])
-  }, [language, subordinateOrganizations])
+    loadOrganizations()
+  }, [language, toast, t])
 
   const filteredOrganizations = currentOrganizations.filter((org) => {
     const matchesName = org.name.toLowerCase().includes(nameFilter.toLowerCase())
@@ -38,6 +73,27 @@ export default function SubordinateOrganizationsPage() {
   const handleClearFilters = () => {
     setNameFilter("")
     setTypeFilter("")
+  }
+
+  const handleDeleteOrganization = async (id: string) => {
+    try {
+      await apiService.organization.delete(id, language)
+
+      // Update the organizations list after deletion
+      setCurrentOrganizations((prev) => prev.filter((org) => org.id !== id))
+
+      toast({
+        title: t("success"),
+        description: t("organizationDeletedSuccessfully"),
+      })
+    } catch (error) {
+      console.error("Error deleting organization:", error)
+      toast({
+        title: t("error"),
+        description: t("errorDeletingOrganization"),
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -131,10 +187,7 @@ export default function SubordinateOrganizationsPage() {
                           <Pencil className="h-4 w-4 text-amber-500" />
                         </Link>
                       </Button>
-                      <DeleteDialog
-                        itemName={org.name}
-                        onDelete={() => deleteSubordinateOrganization(org.id, language)}
-                      />
+                      <DeleteDialog itemName={org.name} onDelete={() => handleDeleteOrganization(org.id)} />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -169,4 +222,3 @@ export default function SubordinateOrganizationsPage() {
     </DashboardLayout>
   )
 }
-

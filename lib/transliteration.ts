@@ -1,217 +1,222 @@
-// Cyrillic to Latin mapping for Uzbek
-const cyrillicToLatin: Record<string, string> = {
-  а: "a",
-  б: "b",
-  в: "v",
-  г: "g",
-  д: "d",
-  е: "e",
-  ё: "yo",
-  ж: "j",
-  з: "z",
-  и: "i",
-  й: "y",
-  к: "k",
-  л: "l",
-  м: "m",
-  н: "n",
-  о: "o",
-  п: "p",
-  р: "r",
-  с: "s",
-  т: "t",
-  у: "u",
-  ф: "f",
-  х: "x",
-  ц: "ts",
-  ч: "ch",
-  ш: "sh",
-  щ: "sh",
-  ъ: "'",
-  ы: "i",
-  ь: "",
-  э: "e",
-  ю: "yu",
-  я: "ya",
-  ў: "o'",
-  қ: "q",
-  ғ: "g'",
-  ҳ: "h",
-  А: "A",
-  Б: "B",
-  В: "V",
-  Г: "G",
-  Д: "D",
-  Е: "E",
-  Ё: "Yo",
-  Ж: "J",
-  З: "Z",
-  И: "I",
-  Й: "Y",
-  К: "K",
-  Л: "L",
-  М: "M",
-  Н: "N",
-  О: "O",
-  П: "P",
-  Р: "R",
-  С: "S",
-  Т: "T",
-  У: "U",
-  Ф: "F",
-  Х: "X",
-  Ц: "Ts",
-  Ч: "Ch",
-  Ш: "Sh",
-  Щ: "Sh",
-  Ъ: "'",
-  Ы: "I",
-  Ь: "",
-  Э: "E",
-  Ю: "Yu",
-  Я: "Ya",
-  Ў: "O'",
-  Қ: "Q",
-  Ғ: "G'",
-  Ҳ: "H",
-}
+/**
+ * Transliteration utility for Uzbek language
+ * Converts between Latin and Cyrillic scripts
+ */
 
-// Latin to Cyrillic mapping for Uzbek
+// Latin to Cyrillic mapping
 const latinToCyrillic: Record<string, string> = {
   a: "а",
   b: "б",
-  v: "в",
-  g: "г",
   d: "д",
   e: "е",
-  j: "ж",
-  z: "з",
+  f: "ф",
+  g: "г",
+  h: "ҳ",
   i: "и",
-  y: "й",
+  j: "ж",
   k: "к",
   l: "л",
   m: "м",
   n: "н",
   o: "о",
   p: "п",
+  q: "қ",
   r: "р",
   s: "с",
   t: "т",
   u: "у",
-  f: "ф",
+  v: "в",
   x: "х",
-  h: "ҳ",
-  q: "қ",
+  y: "й",
+  z: "з",
   A: "А",
   B: "Б",
-  V: "В",
-  G: "Г",
   D: "Д",
   E: "Е",
-  J: "Ж",
-  Z: "З",
+  F: "Ф",
+  G: "Г",
+  H: "Ҳ",
   I: "И",
-  Y: "Й",
+  J: "Ж",
   K: "К",
   L: "Л",
   M: "М",
   N: "Н",
   O: "О",
   P: "П",
+  Q: "Қ",
   R: "Р",
   S: "С",
   T: "Т",
   U: "У",
-  F: "Ф",
+  V: "В",
   X: "Х",
-  H: "Ҳ",
-  Q: "Қ",
+  Y: "Й",
+  Z: "З",
+  sh: "ш",
+  Sh: "Ш",
+  SH: "Ш",
+  ch: "ч",
+  Ch: "Ч",
+  CH: "Ч",
+  yo: "ё",
+  Yo: "Ё",
+  YO: "Ё",
+  yu: "ю",
+  Yu: "Ю",
+  YU: "Ю",
+  ya: "я",
+  Ya: "Я",
+  YA: "Я",
+  "o'": "ў",
+  "O'": "Ў",
+  "g'": "ғ",
+  "G'": "Ғ",
+  "'": "ъ",
+}
+
+// Cyrillic to Latin mapping
+const cyrillicToLatin: Record<string, string> = {
+  а: "a",
+  б: "b",
+  д: "d",
+  е: "e",
+  ф: "f",
+  г: "g",
+  ҳ: "h",
+  и: "i",
+  ж: "j",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  қ: "q",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  в: "v",
+  х: "x",
+  й: "y",
+  з: "z",
+  А: "A",
+  Б: "B",
+  Д: "D",
+  Е: "E",
+  Ф: "F",
+  Г: "G",
+  Ҳ: "H",
+  И: "I",
+  Ж: "J",
+  К: "K",
+  Л: "L",
+  М: "M",
+  Н: "N",
+  О: "O",
+  П: "P",
+  Қ: "Q",
+  Р: "R",
+  С: "S",
+  Т: "T",
+  У: "U",
+  В: "V",
+  Х: "X",
+  Й: "Y",
+  З: "Z",
+  ш: "sh",
+  Ш: "Sh",
+  ч: "ch",
+  Ч: "Ch",
+  ё: "yo",
+  Ё: "Yo",
+  ю: "yu",
+  Ю: "Yu",
+  я: "ya",
+  Я: "Ya",
+  ў: "o'",
+  Ў: "O'",
+  ғ: "g'",
+  Ғ: "G'",
+  ъ: "'",
 }
 
 // Special combinations for Latin to Cyrillic
-const latinSpecialCombinations: [string, string][] = [
-  ["yo", "ё"],
-  ["ch", "ч"],
-  ["sh", "ш"],
-  ["ts", "ц"],
-  ["yu", "ю"],
-  ["ya", "я"],
-  ["o'", "ў"],
-  ["g'", "ғ"],
-  ["Yo", "Ё"],
-  ["Ch", "Ч"],
-  ["Sh", "Ш"],
-  ["Ts", "Ц"],
-  ["Yu", "Ю"],
-  ["Ya", "Я"],
-  ["O'", "Ў"],
-  ["G'", "Ғ"],
-]
-
-// Special combinations for Cyrillic to Latin
-const cyrillicSpecialChars: string[] = ["ё", "ч", "ш", "ц", "ю", "я", "ў", "ғ", "Ё", "Ч", "Ш", "Ц", "Ю", "Я", "Ў", "Ғ"]
+const latinSpecialCombinations = ["sh", "ch", "yo", "yu", "ya", "o'", "g'"]
+const latinSpecialCombinationsCapitalized = ["Sh", "Ch", "Yo", "Yu", "Ya", "O'", "G'"]
+const latinSpecialCombinationsUppercase = ["SH", "CH", "YO", "YU", "YA"]
 
 /**
- * Transliterate text between Cyrillic and Latin Uzbek
- *
+ * Detects if the text is in Cyrillic or Latin script
+ * @param text Text to analyze
+ * @returns 'cyrillic' or 'latin'
+ */
+function detectScript(text: string): "cyrillic" | "latin" {
+  // Count Cyrillic and Latin characters
+  let cyrillicCount = 0
+  let latinCount = 0
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]
+    if (/[а-яА-ЯёЁўЎқҚғҒҳҲ]/.test(char)) {
+      cyrillicCount++
+    } else if (/[a-zA-Z]/.test(char)) {
+      latinCount++
+    }
+  }
+
+  return cyrillicCount > latinCount ? "cyrillic" : "latin"
+}
+
+/**
+ * Transliterates text between Latin and Cyrillic scripts
  * @param text Text to transliterate
- * @param direction Direction of transliteration ('cyrillic-to-latin' or 'latin-to-cyrillic')
+ * @param direction Optional direction ('latin-to-cyrillic' or 'cyrillic-to-latin')
  * @returns Transliterated text
  */
-export function transliterate(text: string, direction: "cyrillic-to-latin" | "latin-to-cyrillic"): string {
-  if (!text) return ""
-
-  // Handle HTML content by preserving tags
-  if (text.includes("<")) {
-    // Split text by HTML tags
-    const parts = text.split(/(<[^>]*>)/)
-    return parts
-      .map((part) => {
-        // If it's an HTML tag, leave it as is
-        if (part.startsWith("<") && part.endsWith(">")) {
-          return part
-        }
-        // Otherwise, transliterate the text
-        return transliterateText(part, direction)
-      })
-      .join("")
+export function transliterate(text: string, direction?: "latin-to-cyrillic" | "cyrillic-to-latin"): string {
+  // If no direction is specified, detect it
+  if (!direction) {
+    const detectedScript = detectScript(text)
+    direction = detectedScript === "latin" ? "latin-to-cyrillic" : "cyrillic-to-latin"
   }
 
-  return transliterateText(text, direction)
-}
+  // Handle HTML tags
+  const htmlTagRegex = /<[^>]*>/g
+  const htmlTags: string[] = []
 
-/**
- * Transliterate plain text without HTML
- */
-function transliterateText(text: string, direction: "cyrillic-to-latin" | "latin-to-cyrillic"): string {
-  if (direction === "cyrillic-to-latin") {
-    let result = text
+  // Replace HTML tags with placeholders
+  let processedText = text.replace(htmlTagRegex, (match) => {
+    htmlTags.push(match)
+    return `__HTML_TAG_${htmlTags.length - 1}__`
+  })
 
-    // First replace special characters
-    for (const char of cyrillicSpecialChars) {
-      if (result.includes(char)) {
-        result = result.split(char).join(cyrillicToLatin[char] || char)
-      }
+  let result = ""
+
+  if (direction === "latin-to-cyrillic") {
+    // Process special combinations first
+    for (const combo of [
+      ...latinSpecialCombinationsUppercase,
+      ...latinSpecialCombinationsCapitalized,
+      ...latinSpecialCombinations,
+    ]) {
+      processedText = processedText.split(combo).join(latinToCyrillic[combo] || combo)
     }
 
-    // Then replace remaining chars
-    return result
-      .split("")
-      .map((char) => cyrillicToLatin[char] || char)
-      .join("")
+    // Process remaining characters
+    for (let i = 0; i < processedText.length; i++) {
+      const char = processedText[i]
+      result += latinToCyrillic[char] || char
+    }
   } else {
-    let result = text
-
-    // First replace special combinations
-    for (const [latin, cyrillic] of latinSpecialCombinations) {
-      result = result.split(latin).join(cyrillic)
+    // Process character by character for Cyrillic to Latin
+    for (let i = 0; i < processedText.length; i++) {
+      const char = processedText[i]
+      result += cyrillicToLatin[char] || char
     }
-
-    // Then replace remaining single characters
-    return result
-      .split("")
-      .map((char) => latinToCyrillic[char] || char)
-      .join("")
   }
-}
 
+  // Restore HTML tags
+  return result.replace(/__HTML_TAG_(\d+)__/g, (_, index) => htmlTags[Number.parseInt(index)])
+}
